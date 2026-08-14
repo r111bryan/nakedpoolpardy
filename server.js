@@ -395,7 +395,6 @@ wss.on('connection', (ws) => {
         if (msg.answer !== undefined) clue.answer = msg.answer;
         if (msg.media !== undefined) clue.media = msg.media;
         if (msg.puzzle !== undefined) clue.puzzle = msg.puzzle; // null, or { names: [correct order] }
-        if (msg.dd !== undefined) clue.dd = !!msg.dd; // checking "Ordering Puzzle" in the editor also marks the question as a Daily Double
       }
       broadcastAll();
       return;
