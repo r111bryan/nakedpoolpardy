@@ -44,6 +44,16 @@
   .lobby-urls div{ margin:2px 0; }
   .lobby-urls b{ color:var(--white); }
   #lockLobbyBtn.locked{ background:var(--danger); color:#fff; border-color:var(--danger); }
+  .host-controls-corner{
+    position:fixed; top:16px; right:16px; z-index:60; display:flex; gap:8px;
+  }
+  .icon-btn{
+    width:46px; height:46px; border-radius:50%; padding:0; font-size:1.3rem; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    background:#024a7a; color:var(--white); border:1.5px solid #0577b8; box-shadow:0 4px 10px rgba(0,0,0,0.3);
+  }
+  .icon-btn.on{ background:var(--gold); color:var(--navy-deep); border-color:var(--gold); }
+  .icon-btn.locked{ background:var(--danger); color:#fff; border-color:var(--danger); }
   .conn-banner{
     max-width:1100px; margin:0 auto 16px; text-align:center; background:rgba(255,77,109,0.18);
     border:1px solid var(--danger); color:#ffb3c1; border-radius:8px; padding:8px 14px;
@@ -189,14 +199,17 @@
   <div class="lobby-code" id="lobbyCode">----</div>
   <div class="lobby-urls" id="lobbyUrls">Waiting for connection…</div>
   <button class="outline small" id="copyLinkBtn">Copy Player Link</button>
-  <button class="outline small" id="lockLobbyBtn">Lock Lobby</button>
+</div>
+
+<div class="host-controls-corner">
+  <button class="icon-btn" id="editToggleBtn" title="Enter Edit Mode">🔧</button>
+  <button class="icon-btn" id="lockLobbyBtn" title="Lock Lobby">🔓</button>
 </div>
 
 <div class="edit-banner" id="editBanner">Edit Mode — click any category or question to change it</div>
 <div class="edit-banner marking-banner" id="markingBanner">Marking Daily Doubles — click any question on the board to toggle ✓ — click here when done</div>
 
 <div class="toolbar">
-  <button class="gold" id="editToggleBtn">Enter Edit Mode</button>
   <span id="editOnlyButtons" style="display:none;gap:10px;flex-wrap:wrap;">
     <button class="outline" id="addCategoryBtn">+ Category</button>
     <button class="outline" id="addRowBtn">+ Row</button>
@@ -212,9 +225,9 @@
 <div class="board-wrap"><table class="board" id="boardTable"></table></div>
 
 <div class="players-grid" id="playersGrid"></div>
-<div class="empty-note" id="emptyNote" style="display:none;">No players have joined yet — share the player link and lobby code above.</div>
+<div class="empty-note" id="emptyNote" style="display:none;">No players have joined yet. Share the player link and lobby code above.</div>
 
-<footer>Share the player link with anyone who has it — treat your lobby code like a room key.</footer>
+<footer>Share the player link with anyone who has it. Treat your lobby code like a room key.</footer>
 
 <!-- PLAY / BUZZ modal -->
 <div class="overlay" id="playOverlay">
@@ -337,7 +350,8 @@ function render() {
   document.getElementById('lobbyUrls').innerHTML =
     'Players join at <b>' + playerUrl + '</b> with code <b>' + S.lobbyCode + '</b>';
   const lockBtn = document.getElementById('lockLobbyBtn');
-  lockBtn.textContent = S.locked ? 'Lobby Locked 🔒' : 'Lock Lobby';
+  lockBtn.textContent = S.locked ? '🔒' : '🔓';
+  lockBtn.title = S.locked ? 'Lobby Locked — click to unlock' : 'Lock Lobby';
   lockBtn.classList.toggle('locked', S.locked);
 
   renderBoard();
@@ -637,7 +651,7 @@ function closeEditModal() {
 // ---------- Toolbar ----------
 document.getElementById('editToggleBtn').onclick = (e) => {
   editMode = !editMode;
-  e.target.textContent = editMode ? 'Exit Edit Mode' : 'Enter Edit Mode';
+  e.target.title = editMode ? 'Exit Edit Mode' : 'Enter Edit Mode';
   e.target.classList.toggle('on', editMode);
   document.getElementById('editBanner').classList.toggle('active', editMode);
   document.getElementById('editOnlyButtons').style.display = editMode ? 'flex' : 'none';
