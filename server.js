@@ -79,6 +79,7 @@ function sampleBoard() {
 const state = {
   lobbyCode: genCode(),
   mode: 'roundRobin', // 'roundRobin' | 'freeForAll'
+  locked: false,      // when true, no new players may join
   board: sampleBoard(),
   teams: [], // {id, name, score, playerIds:[], turnIndex}
   dailyDoubleCount: 1,
@@ -115,8 +116,15 @@ function publicTeams() {
     score: t.score,
     turnIndex: t.turnIndex,
     players: t.playerIds
-      .map((pid) => (players[pid] ? { id: pid, name: players[pid].name, connected: !!players[pid].ws } : null))
+      .map((pid) => (players[pid] ? { id: pid, name: players[pid].name, connected: !!players[pid].ws, avatar: players[pid].avatar || null } : null))
       .filter(Boolean)
+  }));
+}
+
+function boardSummaryForPlayers() {
+  return state.board.categories.map((cat) => ({
+    name: cat.name,
+    clues: cat.clues.map((c) => ({ value: c.value, used: c.used }))
   }));
 }
 
@@ -125,6 +133,7 @@ function hostStateSnapshot() {
     type: 'state',
     lobbyCode: state.lobbyCode,
     mode: state.mode,
+    locked: state.locked,
     board: state.board,
     teams: publicTeams(),
     dailyDoubleCount: state.dailyDoubleCount,
@@ -132,8 +141,7 @@ function hostStateSnapshot() {
     markingDailyDoubles: state.markingDailyDoubles,
     current: state.current,
     activeTurnPlayers: state.teams.reduce((acc, t) => { acc[t.id] = activePlayerForTeam(t); return acc; }, {}),
-    joinInfo: { port: PORT, ips: getLanIps() },
-    unassignedPlayers: Object.values(players).filter((p) => !p.teamId).map((p) => ({ id: p.id, name: p.name, connected: !!p.ws }))
+    unassignedPlayers: Object.values(players).filter((p) => !p.teamId).map((p) => ({ id: p.id, name: p.name, connected: !!p.ws, avatar: p.avatar || null }))
   };
 }
 
@@ -147,27 +155,32 @@ function playerStateSnapshot(player) {
       buzzEnabled = state.mode === 'freeForAll' ? true : activeTurn === player.id;
     }
   }
-  let currentValue = null;
+  let currentPublic = null;
   if (state.current) {
     const clue = findClue(state.current.catIndex, state.current.clueIndex);
-    currentValue = clue ? clue.value : null;
-  }
-  return {
-    type: 'state',
-    you: { id: player.id, name: player.name, teamId: player.teamId },
-    mode: state.mode,
-    teams: publicTeams(),
-    lobbyCode: state.lobbyCode,
-    current: state.current ? {
+    currentPublic = {
       isDailyDouble: state.current.isDailyDouble,
       buzzingOpen: state.current.buzzingOpen,
       locked: state.current.locked,
       winner: state.current.winner,
       answerShown: state.current.answerShown,
       ddWager: state.current.ddWager || null,
-      value: currentValue,
+      value: clue ? clue.value : null,
+      catName: state.board.categories[state.current.catIndex] ? state.board.categories[state.current.catIndex].name : '',
+      clueText: clue ? clue.clue : '',
+      media: clue ? clue.media : null,
       excludedTeamIds: state.current.excludedTeamIds || []
-    } : null,
+    };
+  }
+  return {
+    type: 'state',
+    you: { id: player.id, name: player.name, teamId: player.teamId, avatar: player.avatar || null },
+    mode: state.mode,
+    locked: state.locked,
+    teams: publicTeams(),
+    lobbyCode: state.lobbyCode,
+    board: boardSummaryForPlayers(),
+    current: currentPublic,
     activeTurnPlayerId: activeTurn,
     buzzEnabled
   };
@@ -211,9 +224,13 @@ wss.on('connection', (ws) => {
         ws.send(JSON.stringify({ type: 'join_error', message: 'Lobby code not found.' }));
         return;
       }
+      if (state.locked) {
+        ws.send(JSON.stringify({ type: 'join_error', message: 'This lobby is locked and not accepting new players.' }));
+        return;
+      }
       const name = (msg.name || '').trim().slice(0, 24) || 'Player';
       const id = crypto.randomUUID();
-      players[id] = { id, name, teamId: null, ws };
+      players[id] = { id, name, teamId: null, avatar: null, ws };
       ws.role = 'player';
       ws.playerId = id;
       ws.send(JSON.stringify({ type: 'joined', playerId: id }));
@@ -236,6 +253,16 @@ wss.on('connection', (ws) => {
     }
 
     // --- player actions ---
+    if (msg.type === 'set_avatar') {
+      const p = players[ws.playerId];
+      if (!p) return;
+      if (typeof msg.dataUrl === 'string' && msg.dataUrl.length < 400000) {
+        p.avatar = msg.dataUrl;
+        broadcastAll();
+      }
+      return;
+    }
+
     if (msg.type === 'player_select_team') {
       const p = players[ws.playerId];
       if (!p) return;
@@ -266,7 +293,7 @@ wss.on('connection', (ws) => {
       }
       state.current.locked = true;
       state.current.buzzingOpen = false;
-      state.current.winner = { playerId: p.id, playerName: p.name, teamId: team.id, teamName: team.name };
+      state.current.winner = { playerId: p.id, playerName: p.name, teamId: team.id, teamName: team.name, avatar: p.avatar || null };
       broadcastAll();
       return;
     }
@@ -276,6 +303,11 @@ wss.on('connection', (ws) => {
 
     if (msg.type === 'set_mode') {
       state.mode = msg.mode === 'freeForAll' ? 'freeForAll' : 'roundRobin';
+      broadcastAll();
+      return;
+    }
+    if (msg.type === 'set_lock') {
+      state.locked = !!msg.locked;
       broadcastAll();
       return;
     }

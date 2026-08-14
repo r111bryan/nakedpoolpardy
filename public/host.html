@@ -8,13 +8,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy-deep:#050d24; --navy-board:#0d1f4d; --navy-cell:#132a63; --gold:#f5c518; --gold-dim:#c99f0f;
-    --white:#f4f6ff; --danger:#e0463f; --success:#3fbf6f; --radius:10px;
+    --navy-deep:#012a4a; --navy-board:#023e7d; --navy-cell:#0466c8; --gold:#ffd60a; --gold-dim:#e0b400;
+    --white:#eafcff; --danger:#ff4d6d; --success:#06d6a0; --radius:10px;
   }
   *{box-sizing:border-box;}
   body{
     margin:0; min-height:100vh;
-    background:radial-gradient(ellipse at 50% -10%, #14265c 0%, var(--navy-deep) 55%), var(--navy-deep);
+    background:radial-gradient(ellipse at 50% -10%, #0096c7 0%, var(--navy-deep) 55%), var(--navy-deep);
     font-family:'Inter',sans-serif; color:var(--white); padding:24px 20px 60px;
   }
   h1.marquee{
@@ -26,18 +26,34 @@
   }
   .lobby-bar{
     max-width:1100px; margin:0 auto 18px; display:flex; flex-wrap:wrap; gap:16px;
-    align-items:center; justify-content:center; background:#0c1a41; border:1px solid #26398a;
+    align-items:center; justify-content:center; background:#024a7a; border:1px solid #0577b8;
     border-radius:12px; padding:14px 20px;
   }
   .lobby-code{
     font-family:'Anton',sans-serif; font-size:2rem; letter-spacing:6px; color:var(--gold);
   }
-  .lobby-urls{ font-size:0.8rem; color:#c9d4f5; text-align:left; }
+  .lobby-urls{ font-size:0.8rem; color:#d6f7ff; text-align:left; }
   .lobby-urls div{ margin:2px 0; }
   .lobby-urls b{ color:var(--white); }
   .mode-toggle{ display:flex; gap:6px; }
   .mode-toggle button{ padding:8px 12px; font-size:0.7rem; }
   .mode-toggle button.active{ background:var(--gold); color:var(--navy-deep); }
+  #lockLobbyBtn.locked{ background:var(--danger); color:#fff; border-color:var(--danger); }
+
+  .avatar{
+    width:24px; height:24px; border-radius:50%; object-fit:cover; border:1.5px solid var(--gold);
+    vertical-align:middle; margin-right:5px; background:#0577b8;
+  }
+  .avatar.small{ width:18px; height:18px; }
+  .avatar.big{ width:56px; height:56px; border-width:2px; }
+  .player-row{
+    display:inline-flex; align-items:center; gap:3px; background:#0577b8; border-radius:20px;
+    padding:2px 8px 2px 2px; margin:2px; font-size:0.65rem;
+  }
+  .player-row .kick-x{
+    background:var(--danger); color:#fff; border:none; border-radius:50%; width:15px; height:15px;
+    font-size:0.6rem; line-height:15px; text-align:center; padding:0; cursor:pointer; margin-left:2px;
+  }
 
   .edit-banner{
     display:none; max-width:1100px; margin:0 auto 16px; text-align:center;
@@ -58,7 +74,7 @@
   button:active{ transform:translateY(0); }
   button.gold{ background:var(--gold); }
   button.gold.on{ background:var(--success); color:#04321a; }
-  button.outline{ background:transparent; color:var(--white); border:1.5px solid #33478f; }
+  button.outline{ background:transparent; color:var(--white); border:1.5px solid #1f8fd1; }
   button.outline:hover{ border-color:var(--gold); }
   button.danger{ background:var(--danger); color:#fff; }
   button.success{ background:var(--success); color:#04321a; }
@@ -68,12 +84,12 @@
   .board-wrap{ max-width:1100px; margin:0 auto; overflow-x:auto; }
   table.board{ width:100%; border-collapse:separate; border-spacing:6px; table-layout:fixed; }
   .cat-cell{
-    background:linear-gradient(180deg,var(--navy-cell),#0c1a41); border:1px solid #26398a; border-radius:var(--radius);
+    background:linear-gradient(180deg,var(--navy-cell),#024a7a); border:1px solid #0577b8; border-radius:var(--radius);
     padding:10px 6px; text-align:center; font-family:'Anton',sans-serif; font-size:clamp(0.6rem,1.3vw,0.95rem);
     letter-spacing:0.5px; text-transform:uppercase; color:var(--white); min-height:64px; vertical-align:middle; position:relative;
   }
   .cat-cell.editable{ cursor:text; outline:none; }
-  .cat-cell.editable:hover{ background:linear-gradient(180deg,#1a3480,#0d1f4d); }
+  .cat-cell.editable:hover{ background:linear-gradient(180deg,#1a3480,#013a63); }
   .cat-cell.editable:focus{ box-shadow:0 0 0 2px var(--gold); }
   .cat-remove{
     position:absolute; top:-8px; right:-8px; width:20px; height:20px; border-radius:50%; background:var(--danger);
@@ -82,14 +98,14 @@
   .cat-cell.editable .cat-remove{ display:block; }
 
   .clue-cell{
-    background:linear-gradient(180deg,var(--navy-board),#081431); border:1px solid #1e2f6e; border-radius:var(--radius);
+    background:linear-gradient(180deg,var(--navy-board),#012e52); border:1px solid #045c9c; border-radius:var(--radius);
     text-align:center; font-family:'Anton',sans-serif; color:var(--gold); font-size:clamp(1rem,2.4vw,1.7rem);
     cursor:pointer; height:66px; transition:background .15s ease; position:relative; overflow:hidden;
   }
-  .clue-cell:hover{ background:linear-gradient(180deg,#173368,#0b1c47); }
+  .clue-cell:hover{ background:linear-gradient(180deg,#036fa8,#014a7d); }
   .clue-cell.editing{ border:1px dashed var(--gold-dim); }
-  .clue-cell.used:not(.editing){ color:#2a3e78; cursor:default; background:#0a1638; }
-  .clue-cell .media-dot{ position:absolute; bottom:6px; right:8px; font-size:0.55rem; color:#7f93d6; }
+  .clue-cell.used:not(.editing){ color:#1477b0; cursor:default; background:#013256; }
+  .clue-cell .media-dot{ position:absolute; bottom:6px; right:8px; font-size:0.55rem; color:#8fd8f0; }
   .dd-badge{
     position:absolute; top:5px; left:7px; width:18px; height:18px; border-radius:50%; background:var(--gold);
     color:var(--navy-deep); font-size:0.7rem; font-weight:800; line-height:18px; text-align:center;
@@ -97,7 +113,7 @@
 
   .scoreboard{ max-width:1100px; margin:28px auto 0; display:flex; flex-wrap:wrap; gap:14px; justify-content:center; }
   .team-card{
-    background:linear-gradient(180deg,#0f2358,#081431); border:1px solid #26398a; border-radius:12px;
+    background:linear-gradient(180deg,#0f2358,#012e52); border:1px solid #0577b8; border-radius:12px;
     padding:14px 18px; min-width:190px; text-align:center; position:relative;
   }
   .team-card.excluded{ opacity:0.5; }
@@ -109,20 +125,20 @@
   .team-score{ font-family:'Anton',sans-serif; font-size:1.8rem; margin-bottom:6px; }
   .team-score.negative{ color:var(--danger); }
   .team-score.positive{ color:var(--success); }
-  .team-roster{ font-size:0.65rem; color:#8ea0d6; margin-bottom:8px; min-height:14px; }
+  .team-roster{ font-size:0.65rem; color:#a7e8ff; margin-bottom:8px; min-height:14px; }
   .team-roster .on-clock{ color:var(--gold); font-weight:700; }
   .team-btns{ display:flex; gap:6px; justify-content:center; }
   .team-btns button{ padding:6px 10px; font-size:0.7rem; }
   .remove-team{
-    margin-top:8px; background:transparent; border:none; color:#5a6cae; font-size:0.65rem;
+    margin-top:8px; background:transparent; border:none; color:#4fb3d9; font-size:0.65rem;
     text-transform:uppercase; cursor:pointer; display:none;
   }
   .remove-team.shown{ display:inline-block; }
   .remove-team:hover{ color:var(--danger); }
 
   .waiting-panel{
-    max-width:1100px; margin:20px auto 0; background:#0c1a41; border:1px solid #26398a; border-radius:12px;
-    padding:12px 18px; text-align:center; font-size:0.75rem; color:#c9d4f5;
+    max-width:1100px; margin:20px auto 0; background:#024a7a; border:1px solid #0577b8; border-radius:12px;
+    padding:12px 18px; text-align:center; font-size:0.75rem; color:#d6f7ff;
   }
   .waiting-panel b{ color:var(--gold); }
 
@@ -132,43 +148,44 @@
   }
   .overlay.active{ display:flex; }
   .clue-modal{
-    background:linear-gradient(180deg,#0d1f4d,#050d24); border:2px solid var(--gold); border-radius:16px;
+    background:linear-gradient(180deg,#013a63,#01152b); border:2px solid var(--gold); border-radius:16px;
     max-width:720px; width:100%; padding:36px 32px; text-align:center; box-shadow:0 0 60px rgba(245,197,24,0.15); margin:auto;
   }
   .clue-value-tag{ font-family:'Anton',sans-serif; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:14px; }
   .clue-text{ font-family:'Anton',sans-serif; font-size:clamp(1.2rem,3vw,1.9rem); line-height:1.4; margin-bottom:18px; }
-  .clue-media{ max-width:100%; max-height:300px; border-radius:10px; margin:0 auto 18px; display:block; border:1px solid #26398a; }
+  .clue-media{ max-width:100%; max-height:300px; border-radius:10px; margin:0 auto 18px; display:block; border:1px solid #0577b8; }
   .answer-text{ color:var(--gold); font-size:1.1rem; margin-bottom:18px; display:none; }
   .answer-text.shown{ display:block; }
   .buzz-status{
     font-family:'Anton',sans-serif; font-size:1.2rem; margin:14px 0; min-height:1.4em; letter-spacing:0.5px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
   }
   .buzz-status.won{ color:var(--success); }
   .buzz-status.wrongflag{ color:var(--danger); }
-  .buzz-status.waiting{ color:#8ea0d6; }
+  .buzz-status.waiting{ color:#a7e8ff; }
   .dd-tag{ color:var(--gold); font-family:'Anton',sans-serif; font-size:1.6rem; letter-spacing:2px; margin-bottom:14px; text-shadow:0 0 20px rgba(245,197,24,0.5); }
   .modal-actions{ display:flex; gap:10px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
 
   .edit-field{ text-align:left; margin-bottom:14px; }
-  .edit-field label{ display:block; font-size:0.65rem; letter-spacing:1px; text-transform:uppercase; color:#8ea0d6; margin-bottom:5px; }
+  .edit-field label{ display:block; font-size:0.65rem; letter-spacing:1px; text-transform:uppercase; color:#a7e8ff; margin-bottom:5px; }
   .edit-field textarea, .edit-field input[type=number], .edit-field select{
-    width:100%; background:#081431; border:1px solid #33478f; border-radius:6px; color:var(--white);
+    width:100%; background:#012e52; border:1px solid #1f8fd1; border-radius:6px; color:var(--white);
     font-family:'Inter',sans-serif; font-size:0.85rem; padding:8px; resize:vertical;
   }
   .media-upload-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   .media-preview-wrap{ margin-top:10px; }
-  .media-preview-wrap img, .media-preview-wrap video{ max-width:100%; max-height:200px; border-radius:8px; border:1px solid #26398a; }
+  .media-preview-wrap img, .media-preview-wrap video{ max-width:100%; max-height:200px; border-radius:8px; border:1px solid #0577b8; }
 
   .dd-setup-row{
-    display:flex; align-items:center; justify-content:space-between; gap:10px; background:#0c1a41;
-    border:1px solid #26398a; border-radius:8px; padding:10px 14px; margin-bottom:12px; text-align:left;
+    display:flex; align-items:center; justify-content:space-between; gap:10px; background:#024a7a;
+    border:1px solid #0577b8; border-radius:8px; padding:10px 14px; margin-bottom:12px; text-align:left;
   }
-  .dd-setup-row label{ font-size:0.75rem; color:#c9d4f5; }
-  .dd-setup-row input[type=number]{ width:60px; background:#081431; border:1px solid #33478f; border-radius:6px; color:var(--white); padding:6px; text-align:center; }
-  .dd-stat{ font-size:0.7rem; color:#8ea0d6; letter-spacing:0.5px; }
+  .dd-setup-row label{ font-size:0.75rem; color:#d6f7ff; }
+  .dd-setup-row input[type=number]{ width:60px; background:#012e52; border:1px solid #1f8fd1; border-radius:6px; color:var(--white); padding:6px; text-align:center; }
+  .dd-stat{ font-size:0.7rem; color:#a7e8ff; letter-spacing:0.5px; }
 
   input[type=file]{ display:none; }
-  footer{ text-align:center; color:#4a5aa0; font-size:0.7rem; margin-top:40px; letter-spacing:0.5px; }
+  footer{ text-align:center; color:#2f8fc4; font-size:0.7rem; margin-top:40px; letter-spacing:0.5px; }
 </style>
 </head>
 <body>
@@ -183,6 +200,7 @@
     <button class="outline small" id="modeRoundRobinBtn">Round Robin</button>
     <button class="outline small" id="modeFreeForAllBtn">Free-for-All</button>
   </div>
+  <button class="outline small" id="lockLobbyBtn">Lock Lobby</button>
 </div>
 
 <div class="edit-banner" id="editBanner">Edit Mode — click any team name, category, or question to change it</div>
@@ -268,7 +286,7 @@
 <div class="overlay" id="ddSetupOverlay">
   <div class="clue-modal">
     <div class="clue-value-tag">Daily Double Setup</div>
-    <p style="font-size:0.8rem;color:#c9d4f5;text-align:left;margin-bottom:16px;">
+    <p style="font-size:0.8rem;color:#d6f7ff;text-align:left;margin-bottom:16px;">
       Turn on marking mode, then click any question on the board to mark it eligible with a ✓.
       A Daily Double gets secretly placed on one of the marked questions when you shuffle.
     </p>
@@ -314,6 +332,9 @@ function render() {
 
   document.getElementById('modeRoundRobinBtn').classList.toggle('active', S.mode === 'roundRobin');
   document.getElementById('modeFreeForAllBtn').classList.toggle('active', S.mode === 'freeForAll');
+  const lockBtn = document.getElementById('lockLobbyBtn');
+  lockBtn.textContent = S.locked ? 'Lobby Locked 🔒' : 'Lock Lobby';
+  lockBtn.classList.toggle('locked', S.locked);
 
   renderBoard();
   renderScoreboard();
@@ -331,13 +352,39 @@ document.getElementById('copyLinkBtn').onclick = () => {
 
 document.getElementById('modeRoundRobinBtn').onclick = () => send({ type: 'set_mode', mode: 'roundRobin' });
 document.getElementById('modeFreeForAllBtn').onclick = () => send({ type: 'set_mode', mode: 'freeForAll' });
+document.getElementById('lockLobbyBtn').onclick = () => send({ type: 'set_lock', locked: !S.locked });
+
+function avatarImg(avatar, cls) {
+  const img = document.createElement('img');
+  img.className = 'avatar' + (cls ? ' ' + cls : '');
+  img.src = avatar || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="%230577b8"/></svg>');
+  return img;
+}
 
 function renderUnassigned() {
   const panel = document.getElementById('unassignedPanel');
   const list = S.unassignedPlayers || [];
   if (list.length === 0) { panel.style.display = 'none'; return; }
   panel.style.display = 'block';
-  panel.innerHTML = 'Waiting to pick a team: <b>' + list.map(p => p.name).join(', ') + '</b>';
+  panel.innerHTML = '';
+  const label = document.createElement('span');
+  label.textContent = 'Waiting to pick a team: ';
+  panel.appendChild(label);
+  list.forEach(p => {
+    const row = document.createElement('span');
+    row.className = 'player-row';
+    row.appendChild(avatarImg(p.avatar, 'small'));
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = p.name;
+    row.appendChild(nameSpan);
+    const kick = document.createElement('button');
+    kick.className = 'kick-x';
+    kick.textContent = '×';
+    kick.title = 'Kick player';
+    kick.onclick = () => { if (confirm('Kick ' + p.name + '? They will need to rejoin.')) send({ type: 'kick_player', playerId: p.id }); };
+    row.appendChild(kick);
+    panel.appendChild(row);
+  });
 }
 
 // ---------- Board ----------
@@ -422,9 +469,26 @@ function renderScoreboard() {
     const roster = document.createElement('div');
     roster.className = 'team-roster';
     const activeId = S.activeTurnPlayers ? S.activeTurnPlayers[team.id] : null;
-    roster.innerHTML = team.players.length
-      ? team.players.map(p => (S.mode === 'roundRobin' && p.id === activeId) ? ('<span class="on-clock">' + p.name + ' 🔔</span>') : p.name).join(', ')
-      : 'No players yet';
+    if (team.players.length === 0) {
+      roster.textContent = 'No players yet';
+    } else {
+      team.players.forEach(p => {
+        const row = document.createElement('span');
+        row.className = 'player-row';
+        row.appendChild(avatarImg(p.avatar, 'small'));
+        const nameSpan = document.createElement('span');
+        nameSpan.className = (S.mode === 'roundRobin' && p.id === activeId) ? 'on-clock' : '';
+        nameSpan.textContent = p.name + ((S.mode === 'roundRobin' && p.id === activeId) ? ' 🔔' : '');
+        row.appendChild(nameSpan);
+        const kick = document.createElement('button');
+        kick.className = 'kick-x';
+        kick.textContent = '×';
+        kick.title = 'Kick player';
+        kick.onclick = () => { if (confirm('Kick ' + p.name + '? They will need to rejoin.')) send({ type: 'kick_player', playerId: p.id }); };
+        row.appendChild(kick);
+        roster.appendChild(row);
+      });
+    }
 
     const scoreDiv = document.createElement('div');
     scoreDiv.className = 'team-score ' + (team.score > 0 ? 'positive' : team.score < 0 ? 'negative' : '');
@@ -522,11 +586,15 @@ function renderPlayModal() {
     statusEl.classList.add('waiting');
     actions.appendChild(mkBtn('No One Buzzed / Skip', 'outline', () => send({ type: 'judge', result: 'skip' })));
   } else if (S.current.locked && !S.current.answerShown) {
-    statusEl.textContent = '🔔 ' + S.current.winner.playerName + ' (' + S.current.winner.teamName + ') buzzed in!';
+    statusEl.innerHTML = '';
+    statusEl.appendChild(avatarImg(S.current.winner.avatar, 'small'));
+    statusEl.appendChild(document.createTextNode(' 🔔 ' + S.current.winner.playerName + ' (' + S.current.winner.teamName + ') buzzed in!'));
     statusEl.classList.add('won');
     actions.appendChild(mkBtn('Show Answer', 'gold', () => send({ type: 'reveal_answer' })));
   } else if (S.current.locked && S.current.answerShown) {
-    statusEl.textContent = '🔔 ' + S.current.winner.playerName + ' (' + S.current.winner.teamName + ')';
+    statusEl.innerHTML = '';
+    statusEl.appendChild(avatarImg(S.current.winner.avatar, 'small'));
+    statusEl.appendChild(document.createTextNode(' 🔔 ' + S.current.winner.playerName + ' (' + S.current.winner.teamName + ')'));
     statusEl.classList.add('won');
     actions.appendChild(mkBtn('Correct', 'success', () => send({ type: 'judge', result: 'correct' })));
     actions.appendChild(mkBtn('Wrong', 'danger', () => send({ type: 'judge', result: 'wrong' })));

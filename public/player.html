@@ -8,25 +8,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy-deep:#050d24; --navy-cell:#132a63; --gold:#f5c518; --gold-dim:#c99f0f;
-    --white:#f4f6ff; --danger:#e0463f; --success:#3fbf6f;
+    --navy-deep:#01152b; --navy-cell:#0466c8; --gold:#ffd60a; --gold-dim:#e0b400;
+    --white:#eafcff; --danger:#ff4d6d; --success:#06d6a0;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ height:100%; }
   body{
     margin:0; min-height:100vh; display:flex; flex-direction:column;
-    background:radial-gradient(ellipse at 50% -10%, #14265c 0%, var(--navy-deep) 55%), var(--navy-deep);
+    background:radial-gradient(ellipse at 50% -10%, #0096c7 0%, var(--navy-deep) 55%), var(--navy-deep);
     font-family:'Inter',sans-serif; color:var(--white); padding:20px; overflow-x:hidden;
   }
   h1.marquee{
-    font-family:'Anton',sans-serif; text-align:center; font-size:2.2rem; letter-spacing:4px; margin:0 0 20px;
+    font-family:'Anton',sans-serif; text-align:center; font-size:2rem; letter-spacing:4px; margin:0 0 16px;
     background:linear-gradient(180deg,#fff 0%, var(--gold) 55%, var(--gold-dim) 100%);
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
-  .screen{ flex:1; display:flex; flex-direction:column; justify-content:center; gap:16px; max-width:420px; margin:0 auto; width:100%; }
-  label{ font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; color:#8ea0d6; }
+  .screen{ flex:1; display:flex; flex-direction:column; justify-content:center; gap:14px; max-width:460px; margin:0 auto; width:100%; }
+  label{ font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; color:#a7e8ff; }
   input[type=text]{
-    width:100%; background:#0c1a41; border:1px solid #33478f; border-radius:10px; color:var(--white);
+    width:100%; background:#024a7a; border:1px solid #1f8fd1; border-radius:10px; color:var(--white);
     font-family:'Inter',sans-serif; font-size:1.1rem; padding:14px; text-align:center; letter-spacing:2px;
   }
   input[type=text]:focus{ outline:none; border-color:var(--gold); }
@@ -35,42 +35,75 @@
     border:none; border-radius:10px; padding:16px; cursor:pointer; color:var(--navy-deep); background:var(--gold);
   }
   button:disabled{ opacity:0.35; }
-  button.outline{ background:transparent; color:var(--white); border:1.5px solid #33478f; }
+  button.outline{ background:transparent; color:var(--white); border:1.5px solid #1f8fd1; }
+  button.small{ padding:9px 14px; font-size:0.75rem; }
   .error{ color:var(--danger); font-size:0.85rem; text-align:center; min-height:1.2em; }
+
+  .avatar{
+    width:24px; height:24px; border-radius:50%; object-fit:cover; border:1.5px solid var(--gold);
+    vertical-align:middle; background:#0577b8; flex-shrink:0;
+  }
+  .avatar.big{ width:64px; height:64px; border-width:2px; }
+  .avatar.small{ width:18px; height:18px; }
+  .avatar-row{ display:flex; align-items:center; justify-content:center; gap:12px; }
+  input[type=file]{ display:none; }
 
   .team-list{ display:flex; flex-direction:column; gap:10px; }
   .team-option{
-    background:#0c1a41; border:1px solid #26398a; border-radius:10px; padding:14px; text-align:left;
+    background:#024a7a; border:1px solid #0577b8; border-radius:10px; padding:14px; text-align:left;
     color:var(--white); font-weight:700; display:flex; justify-content:space-between; align-items:center;
   }
-  .team-option span.count{ color:#8ea0d6; font-weight:400; font-size:0.8rem; }
+  .team-option span.count{ color:#a7e8ff; font-weight:400; font-size:0.8rem; }
   .team-option:hover{ border-color:var(--gold); }
 
   .buzzer-screen{ text-align:center; }
-  .you-are{ font-size:0.85rem; color:#8ea0d6; margin-bottom:4px; }
-  .you-team{ font-family:'Anton',sans-serif; color:var(--gold); font-size:1.3rem; margin-bottom:18px; }
-  .turn-note{ font-size:0.8rem; color:#c9d4f5; margin-bottom:18px; min-height:2.4em; }
+  .you-row{ display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:2px; }
+  .you-are{ font-size:0.85rem; color:#a7e8ff; }
+  .you-team{ font-family:'Anton',sans-serif; color:var(--gold); font-size:1.15rem; margin-bottom:12px; }
+  .change-photo{ background:none; border:none; color:#a7e8ff; font-size:0.65rem; text-transform:none; font-weight:400; padding:2px; text-decoration:underline; cursor:pointer; }
+
+  /* Live board */
+  .live-board-wrap{ overflow-x:auto; margin-bottom:16px; -webkit-overflow-scrolling:touch; }
+  table.mini-board{ border-collapse:separate; border-spacing:3px; margin:0 auto; }
+  .mini-cat{
+    background:linear-gradient(180deg,var(--navy-cell),#013a63); border:1px solid #0577b8; border-radius:5px;
+    padding:4px 3px; text-align:center; font-family:'Anton',sans-serif; font-size:0.5rem; letter-spacing:0.3px;
+    text-transform:uppercase; color:var(--white); width:62px; line-height:1.15;
+  }
+  .mini-clue{
+    background:#013a63; border:1px solid #045c9c; border-radius:5px; text-align:center;
+    font-family:'Anton',sans-serif; color:var(--gold); font-size:0.7rem; height:30px; width:62px;
+  }
+  .mini-clue.used{ color:#1477b0; background:#013256; }
+
+  /* Clue view */
+  .clue-view{ background:#024a7a; border:1px solid #0577b8; border-radius:14px; padding:18px; margin-bottom:16px; }
+  .clue-cat-tag{ font-family:'Anton',sans-serif; color:var(--gold); font-size:0.85rem; letter-spacing:1px; margin-bottom:8px; }
+  .clue-media-p{ max-width:100%; max-height:160px; border-radius:8px; margin:0 auto 10px; display:block; }
+  .clue-text-p{ font-family:'Anton',sans-serif; font-size:1.05rem; line-height:1.4; }
+
+  .turn-note{ font-size:0.8rem; color:#d6f7ff; margin-bottom:16px; min-height:2.2em; }
   .turn-note b{ color:var(--gold); }
 
   .buzzer-btn{
-    width:230px; height:230px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
-    font-family:'Anton',sans-serif; font-size:1.6rem; letter-spacing:2px; border:none; cursor:pointer;
+    width:200px; height:200px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    font-family:'Anton',sans-serif; font-size:1.5rem; letter-spacing:2px; border:none; cursor:pointer;
     background:radial-gradient(circle at 35% 30%, #ff6b5e, var(--danger) 60%, #8c1f1a 100%);
-    color:#fff; box-shadow:0 10px 0 #7a1a15, 0 14px 30px rgba(224,70,63,0.4);
+    color:#fff; box-shadow:0 10px 0 #7a1a15, 0 14px 30px rgba(255,77,109,0.4);
     transition:transform .06s ease, box-shadow .06s ease;
   }
-  .buzzer-btn:active:not(:disabled){ transform:translateY(8px); box-shadow:0 2px 0 #7a1a15, 0 6px 16px rgba(224,70,63,0.3); }
+  .buzzer-btn:active:not(:disabled){ transform:translateY(8px); box-shadow:0 2px 0 #7a1a15, 0 6px 16px rgba(255,77,109,0.3); }
   .buzzer-btn:disabled{
     background:radial-gradient(circle at 35% 30%, #35406e, #202e5c 60%, #131c3d 100%);
-    box-shadow:0 10px 0 #0e1530; color:#5a6cae; cursor:not-allowed;
+    box-shadow:0 10px 0 #0e1530; color:#4fb3d9; cursor:not-allowed;
   }
   .buzzer-btn.won{
     background:radial-gradient(circle at 35% 30%, #6bffa0, var(--success) 60%, #1a7a44 100%);
     box-shadow:0 10px 0 #145c33;
   }
 
-  .mini-score{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:24px; }
-  .mini-score .t{ background:#0c1a41; border:1px solid #26398a; border-radius:8px; padding:8px 12px; font-size:0.7rem; }
+  .mini-score{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:22px; }
+  .mini-score .t{ background:#024a7a; border:1px solid #0577b8; border-radius:8px; padding:8px 12px; font-size:0.7rem; }
   .mini-score .t b{ color:var(--gold); display:block; font-family:'Anton',sans-serif; font-size:0.95rem; }
 </style>
 </head>
@@ -86,6 +119,14 @@
   <div>
     <label>Your name</label>
     <input type="text" id="nameInput" maxlength="24" placeholder="Your name">
+  </div>
+  <div>
+    <label>Profile picture (optional)</label>
+    <div class="avatar-row">
+      <img class="avatar big" id="avatarPreview" style="display:none;">
+      <button type="button" class="outline small" id="avatarPickBtn">Choose Photo</button>
+      <input type="file" id="avatarInput" accept="image/*">
+    </div>
   </div>
   <button id="joinBtn">Join Game</button>
   <div class="error" id="joinError"></div>
@@ -103,8 +144,24 @@
 
 <!-- BUZZER -->
 <div class="screen buzzer-screen" id="buzzerScreen" style="display:none;">
-  <div class="you-are" id="youAre"></div>
+  <div class="you-row">
+    <img class="avatar" id="youAvatar">
+    <span class="you-are" id="youAre"></span>
+    <button type="button" class="change-photo" id="changePhotoBtn">change photo</button>
+  </div>
   <div class="you-team" id="youTeam"></div>
+
+  <div class="live-board-wrap" id="liveBoardWrap" style="display:none;">
+    <table class="mini-board" id="miniBoardTable"></table>
+  </div>
+
+  <div class="clue-view" id="clueView" style="display:none;">
+    <div class="clue-cat-tag" id="clueCatTag"></div>
+    <img class="clue-media-p" id="clueImg" style="display:none;">
+    <video class="clue-media-p" id="clueVideo" style="display:none;" controls></video>
+    <div class="clue-text-p" id="clueTextP"></div>
+  </div>
+
   <div class="turn-note" id="turnNote"></div>
   <button class="buzzer-btn" id="buzzerBtn" disabled>WAIT</button>
   <div class="mini-score" id="miniScore"></div>
@@ -113,8 +170,30 @@
 <script>
 let ws = null;
 let playerId = sessionStorage.getItem('jeopardy_player_id') || null;
-let joinedCode = sessionStorage.getItem('jeopardy_lobby_code') || null;
 let S = null;
+let pendingAvatarDataUrl = null;
+
+function resizeImageFile(file, maxSize) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+        else { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
 function connect() {
   ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
@@ -126,6 +205,7 @@ function connect() {
     if (msg.type === 'joined') {
       playerId = msg.playerId;
       sessionStorage.setItem('jeopardy_player_id', playerId);
+      if (pendingAvatarDataUrl) { send({ type: 'set_avatar', dataUrl: pendingAvatarDataUrl }); pendingAvatarDataUrl = null; }
       showScreen('teamScreen');
     } else if (msg.type === 'join_error') {
       document.getElementById('joinError').textContent = msg.message;
@@ -152,13 +232,24 @@ function showScreen(id) {
   });
 }
 
+document.getElementById('avatarPickBtn').onclick = () => document.getElementById('avatarInput').click();
+document.getElementById('avatarInput').onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const dataUrl = await resizeImageFile(file, 160);
+  pendingAvatarDataUrl = dataUrl;
+  const preview = document.getElementById('avatarPreview');
+  preview.src = dataUrl; preview.style.display = 'inline-block';
+};
+
+document.getElementById('changePhotoBtn').onclick = () => document.getElementById('avatarInput2').click();
+
 document.getElementById('joinBtn').onclick = () => {
   const code = document.getElementById('codeInput').value.trim().toUpperCase();
   const name = document.getElementById('nameInput').value.trim();
   if (code.length !== 4) { document.getElementById('joinError').textContent = 'Enter the 4-letter lobby code.'; return; }
   if (!name) { document.getElementById('joinError').textContent = 'Enter your name.'; return; }
   document.getElementById('joinError').textContent = '';
-  sessionStorage.setItem('jeopardy_lobby_code', code);
   send({ type: 'player_join', lobbyCode: code, name });
 };
 
@@ -188,7 +279,31 @@ function render() {
   showScreen('buzzerScreen');
   const myTeam = S.teams.find(t => t.id === S.you.teamId);
   document.getElementById('youAre').textContent = S.you.name;
+  document.getElementById('youAvatar').src = S.you.avatar || blankAvatar();
   document.getElementById('youTeam').textContent = myTeam ? myTeam.name : '';
+
+  const liveBoardWrap = document.getElementById('liveBoardWrap');
+  const clueView = document.getElementById('clueView');
+
+  if (!S.current) {
+    liveBoardWrap.style.display = 'block';
+    clueView.style.display = 'none';
+    renderMiniBoard();
+  } else {
+    liveBoardWrap.style.display = 'none';
+    clueView.style.display = 'block';
+    document.getElementById('clueCatTag').textContent = S.current.isDailyDouble
+      ? 'DAILY DOUBLE — ' + S.current.catName.toUpperCase()
+      : S.current.catName.toUpperCase() + ' — $' + S.current.value;
+    document.getElementById('clueTextP').textContent = S.current.clueText || '';
+    const img = document.getElementById('clueImg');
+    const vid = document.getElementById('clueVideo');
+    img.style.display = 'none'; vid.style.display = 'none'; vid.pause();
+    if (S.current.media) {
+      if (S.current.media.type === 'video') { vid.src = S.current.media.dataUrl; vid.style.display = 'block'; }
+      else { img.src = S.current.media.dataUrl; img.style.display = 'block'; }
+    }
+  }
 
   const btn = document.getElementById('buzzerBtn');
   const note = document.getElementById('turnNote');
@@ -237,9 +352,52 @@ function render() {
   });
 }
 
+function renderMiniBoard() {
+  const table = document.getElementById('miniBoardTable');
+  if (!S.board) { table.innerHTML = ''; return; }
+  table.innerHTML = '';
+  const catRow = document.createElement('tr');
+  S.board.forEach(cat => {
+    const td = document.createElement('td');
+    td.className = 'mini-cat';
+    td.textContent = cat.name;
+    catRow.appendChild(td);
+  });
+  table.appendChild(catRow);
+  const rowCount = Math.max(...S.board.map(c => c.clues.length), 0);
+  for (let r = 0; r < rowCount; r++) {
+    const tr = document.createElement('tr');
+    S.board.forEach(cat => {
+      const clue = cat.clues[r];
+      const td = document.createElement('td');
+      if (!clue) { tr.appendChild(td); return; }
+      td.className = 'mini-clue' + (clue.used ? ' used' : '');
+      td.textContent = clue.used ? '' : ('$' + clue.value);
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  }
+}
+
+function blankAvatar() {
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="%230577b8"/></svg>');
+}
+
 document.getElementById('buzzerBtn').onclick = () => {
   send({ type: 'player_buzz' });
   if (navigator.vibrate) navigator.vibrate(60);
+};
+
+// Hidden secondary file input so "change photo" on the buzzer screen can reuse the same resize/send flow
+const avatarInput2 = document.createElement('input');
+avatarInput2.type = 'file'; avatarInput2.accept = 'image/*'; avatarInput2.id = 'avatarInput2'; avatarInput2.style.display = 'none';
+document.body.appendChild(avatarInput2);
+avatarInput2.onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const dataUrl = await resizeImageFile(file, 160);
+  send({ type: 'set_avatar', dataUrl });
+  e.target.value = '';
 };
 </script>
 </body>
