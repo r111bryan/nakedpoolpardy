@@ -11,7 +11,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => res.redirect('/host.html'));
 
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, maxPayload: 15 * 1024 * 1024 }); // 15MB per message, enough for a compressed image/GIF or short video clip
 
 // ---------- Helpers ----------
 function genCode() {
@@ -206,6 +206,10 @@ function broadcastAll() {
 wss.on('connection', (ws) => {
   ws.role = null;
   ws.playerId = null;
+
+  ws.on('error', (err) => {
+    console.error('WebSocket error (connection dropped, server still running):', err.message);
+  });
 
   ws.on('message', (raw) => {
     let msg;
