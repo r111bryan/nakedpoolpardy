@@ -39,15 +39,10 @@
     align-items:center; justify-content:center; background:#024a7a; border:1px solid #0577b8;
     border-radius:12px; padding:14px 20px;
   }
-  .lobby-code{
-    font-family:'PartyFont','Anton',sans-serif; font-size:2rem; letter-spacing:6px; color:var(--gold);
-  }
+  .lobby-code{ font-family:'PartyFont','Anton',sans-serif; font-size:2rem; letter-spacing:6px; color:var(--gold); }
   .lobby-urls{ font-size:0.8rem; color:#d6f7ff; text-align:left; }
   .lobby-urls div{ margin:2px 0; }
   .lobby-urls b{ color:var(--white); }
-  .mode-toggle{ display:flex; gap:6px; }
-  .mode-toggle button{ padding:8px 12px; font-size:0.7rem; }
-  .mode-toggle button.active{ background:var(--gold); color:var(--navy-deep); }
   #lockLobbyBtn.locked{ background:var(--danger); color:#fff; border-color:var(--danger); }
   .conn-banner{
     max-width:1100px; margin:0 auto 16px; text-align:center; background:rgba(255,77,109,0.18);
@@ -55,29 +50,14 @@
     font-size:0.8rem; font-weight:700;
   }
 
-  .avatar{
-    width:24px; height:24px; border-radius:50%; object-fit:cover; border:1.5px solid var(--gold);
-    vertical-align:middle; margin-right:5px; background:#0577b8;
-  }
-  .avatar.small{ width:18px; height:18px; }
-  .avatar.big{ width:56px; height:56px; border-width:2px; }
-  .player-row{
-    display:inline-flex; align-items:center; gap:3px; background:#0577b8; border-radius:20px;
-    padding:2px 8px 2px 2px; margin:2px; font-size:0.65rem;
-  }
-  .player-row .kick-x{
-    background:var(--danger); color:#fff; border:none; border-radius:50%; width:15px; height:15px;
-    font-size:0.6rem; line-height:15px; text-align:center; padding:0; cursor:pointer; margin-left:2px;
-  }
-
   .edit-banner{
     display:none; max-width:1100px; margin:0 auto 16px; text-align:center;
-    background:rgba(245,197,24,0.1); border:1px solid var(--gold-dim); color:var(--gold);
+    background:rgba(255,214,10,0.1); border:1px solid var(--gold-dim); color:var(--gold);
     border-radius:8px; padding:8px 14px; font-size:0.75rem; letter-spacing:0.5px; text-transform:uppercase;
   }
   .edit-banner.active{ display:block; }
-  .marking-banner{ background:rgba(245,197,24,0.18); cursor:pointer; }
-  .marking-banner:hover{ background:rgba(245,197,24,0.28); }
+  .marking-banner{ background:rgba(255,214,10,0.18); cursor:pointer; }
+  .marking-banner:hover{ background:rgba(255,214,10,0.28); }
 
   .toolbar{ max-width:1100px; margin:0 auto 24px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
   button{
@@ -89,7 +69,7 @@
   button:active{ transform:translateY(0); }
   button.gold{ background:var(--gold); }
   button.gold.on{ background:var(--success); color:#04321a; }
-  button.outline{ background:transparent; color:var(--white); border:1.5px solid #1f8fd1; }
+  button.outline{ background:transparent; color:var(--white); border:1.5px solid #0577b8; }
   button.outline:hover{ border-color:var(--gold); }
   button.danger{ background:var(--danger); color:#fff; }
   button.success{ background:var(--success); color:#04321a; }
@@ -99,7 +79,7 @@
   .board-wrap{ max-width:1100px; margin:0 auto; overflow-x:auto; }
   table.board{ width:100%; border-collapse:separate; border-spacing:6px; table-layout:fixed; }
   .cat-cell{
-    background:linear-gradient(180deg,var(--navy-cell),#024a7a); border:1px solid #0577b8; border-radius:var(--radius);
+    background:linear-gradient(180deg,var(--navy-cell),#013a63); border:1px solid #0577b8; border-radius:var(--radius);
     padding:10px 6px; text-align:center; font-family:'PartyFont','Anton',sans-serif; font-size:clamp(0.6rem,1.3vw,0.95rem);
     letter-spacing:0.5px; text-transform:uppercase; color:var(--white); min-height:64px; vertical-align:middle; position:relative;
   }
@@ -126,36 +106,33 @@
     color:var(--navy-deep); font-size:0.7rem; font-weight:800; line-height:18px; text-align:center;
   }
 
-  .scoreboard{ max-width:1100px; margin:28px auto 0; display:flex; flex-wrap:wrap; gap:14px; justify-content:center; }
-  .team-card{
-    background:linear-gradient(180deg,#0f2358,#012e52); border:1px solid #0577b8; border-radius:12px;
-    padding:14px 18px; min-width:190px; text-align:center; position:relative;
+  .avatar{
+    width:24px; height:24px; border-radius:50%; object-fit:cover; border:1.5px solid var(--gold);
+    vertical-align:middle; margin-right:5px; background:#0577b8;
   }
-  .team-card.excluded{ opacity:0.5; }
-  .team-name{
-    background:transparent; border:none; color:var(--gold); font-family:'PartyFont','Anton',sans-serif; font-size:1rem;
-    text-align:center; letter-spacing:1px; text-transform:uppercase; width:100%; margin-bottom:2px; pointer-events:none;
-  }
-  .team-name.editable{ pointer-events:auto; border-bottom:1px dashed var(--gold-dim); cursor:text; }
-  .team-score{ font-family:'PartyFont','Anton',sans-serif; font-size:1.8rem; margin-bottom:6px; }
-  .team-score.negative{ color:var(--danger); }
-  .team-score.positive{ color:var(--success); }
-  .team-roster{ font-size:0.65rem; color:#a7e8ff; margin-bottom:8px; min-height:14px; }
-  .team-roster .on-clock{ color:var(--gold); font-weight:700; }
-  .team-btns{ display:flex; gap:6px; justify-content:center; }
-  .team-btns button{ padding:6px 10px; font-size:0.7rem; }
-  .remove-team{
-    margin-top:8px; background:transparent; border:none; color:#4fb3d9; font-size:0.65rem;
-    text-transform:uppercase; cursor:pointer; display:none;
-  }
-  .remove-team.shown{ display:inline-block; }
-  .remove-team:hover{ color:var(--danger); }
+  .avatar.small{ width:18px; height:18px; }
+  .avatar.big{ width:64px; height:64px; border-width:3px; }
 
-  .waiting-panel{
-    max-width:1100px; margin:20px auto 0; background:#024a7a; border:1px solid #0577b8; border-radius:12px;
-    padding:12px 18px; text-align:center; font-size:0.75rem; color:#d6f7ff;
+  .players-grid{ max-width:1100px; margin:28px auto 0; display:flex; flex-wrap:wrap; gap:14px; justify-content:center; }
+  .player-card{
+    background:linear-gradient(180deg,#0f2358,#012e52); border:1px solid #0577b8; border-radius:12px;
+    padding:14px 18px; min-width:170px; text-align:center; position:relative;
   }
-  .waiting-panel b{ color:var(--gold); }
+  .player-card.excluded{ opacity:0.5; }
+  .player-card .avatar.big{ margin:0 auto 8px; display:block; }
+  .player-card .p-name{ font-family:'PartyFont','Anton',sans-serif; font-size:0.95rem; color:var(--white); margin-bottom:4px; }
+  .player-score{ font-family:'PartyFont','Anton',sans-serif; font-size:1.7rem; margin-bottom:8px; }
+  .player-score.negative{ color:var(--danger); }
+  .player-score.positive{ color:var(--success); }
+  .player-btns{ display:flex; gap:6px; justify-content:center; margin-bottom:6px; }
+  .player-btns button{ padding:6px 10px; font-size:0.7rem; }
+  .kick-btn{
+    background:transparent; border:none; color:#4fb3d9; font-size:0.65rem;
+    text-transform:uppercase; cursor:pointer; padding:2px;
+  }
+  .kick-btn:hover{ color:var(--danger); }
+
+  .empty-note{ max-width:1100px; margin:20px auto 0; text-align:center; font-size:0.8rem; color:#d6f7ff; }
 
   .overlay{
     position:fixed; inset:0; background:rgba(2,6,20,0.9); display:none; align-items:center; justify-content:center;
@@ -164,7 +141,7 @@
   .overlay.active{ display:flex; }
   .clue-modal{
     background:linear-gradient(180deg,#013a63,#01152b); border:2px solid var(--gold); border-radius:16px;
-    max-width:720px; width:100%; padding:36px 32px; text-align:center; box-shadow:0 0 60px rgba(245,197,24,0.15); margin:auto;
+    max-width:720px; width:100%; padding:36px 32px; text-align:center; box-shadow:0 0 60px rgba(255,214,10,0.15); margin:auto;
   }
   .clue-value-tag{ font-family:'PartyFont','Anton',sans-serif; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:14px; }
   .clue-text{ font-family:'PartyFont','Anton',sans-serif; font-size:clamp(1.2rem,3vw,1.9rem); line-height:1.4; margin-bottom:18px; }
@@ -177,12 +154,12 @@
   }
   .buzz-status.won{ color:var(--success); }
   .buzz-status.wrongflag{ color:var(--danger); }
-  .buzz-status.waiting{ color:#a7e8ff; }
-  .dd-tag{ color:var(--gold); font-family:'PartyFont','Anton',sans-serif; font-size:1.6rem; letter-spacing:2px; margin-bottom:14px; text-shadow:0 0 20px rgba(245,197,24,0.5); }
+  .buzz-status.waiting{ color:#8fd8f0; }
+  .dd-tag{ color:var(--gold); font-family:'PartyFont','Anton',sans-serif; font-size:1.6rem; letter-spacing:2px; margin-bottom:14px; text-shadow:0 0 20px rgba(255,214,10,0.5); }
   .modal-actions{ display:flex; gap:10px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
 
   .edit-field{ text-align:left; margin-bottom:14px; }
-  .edit-field label{ display:block; font-size:0.65rem; letter-spacing:1px; text-transform:uppercase; color:#a7e8ff; margin-bottom:5px; }
+  .edit-field label{ display:block; font-size:0.65rem; letter-spacing:1px; text-transform:uppercase; color:#8fd8f0; margin-bottom:5px; }
   .edit-field textarea, .edit-field input[type=number], .edit-field select{
     width:100%; background:#012e52; border:1px solid #1f8fd1; border-radius:6px; color:var(--white);
     font-family:'Inter',sans-serif; font-size:0.85rem; padding:8px; resize:vertical;
@@ -197,7 +174,7 @@
   }
   .dd-setup-row label{ font-size:0.75rem; color:#d6f7ff; }
   .dd-setup-row input[type=number]{ width:60px; background:#012e52; border:1px solid #1f8fd1; border-radius:6px; color:var(--white); padding:6px; text-align:center; }
-  .dd-stat{ font-size:0.7rem; color:#a7e8ff; letter-spacing:0.5px; }
+  .dd-stat{ font-size:0.7rem; color:#8fd8f0; letter-spacing:0.5px; }
 
   input[type=file]{ display:none; }
   footer{ text-align:center; color:#2f8fc4; font-size:0.7rem; margin-top:40px; letter-spacing:0.5px; }
@@ -205,21 +182,17 @@
 </head>
 <body>
 
-<img class="title-image" src="nakedpoolpardy.png" alt="Nakedpoolpardy!">
+<h1 class="marquee">Nakedpoolpardy!</h1>
 <div class="conn-banner" id="connBanner" style="display:none;">⚠️ Reconnecting to server…</div>
 
 <div class="lobby-bar">
   <div class="lobby-code" id="lobbyCode">----</div>
   <div class="lobby-urls" id="lobbyUrls">Waiting for connection…</div>
   <button class="outline small" id="copyLinkBtn">Copy Player Link</button>
-  <div class="mode-toggle">
-    <button class="outline small" id="modeRoundRobinBtn">Round Robin</button>
-    <button class="outline small" id="modeFreeForAllBtn">Free-for-All</button>
-  </div>
   <button class="outline small" id="lockLobbyBtn">Lock Lobby</button>
 </div>
 
-<div class="edit-banner" id="editBanner">Edit Mode — click any team name, category, or question to change it</div>
+<div class="edit-banner" id="editBanner">Edit Mode — click any category or question to change it</div>
 <div class="edit-banner marking-banner" id="markingBanner">Marking Daily Doubles — click any question on the board to toggle ✓ — click here when done</div>
 
 <div class="toolbar">
@@ -229,7 +202,6 @@
     <button class="outline" id="addRowBtn">+ Row</button>
     <button class="outline" id="resetUsedBtn">Reset Clues</button>
     <button class="outline" id="resetScoresBtn">Reset Scores</button>
-    <button class="outline" id="addTeamBtn">+ Team</button>
     <button class="outline" id="ddSetupBtn">Daily Double</button>
     <button class="outline" id="saveBtn">Export Board (.json)</button>
     <button class="outline" id="loadBtn">Import Board</button>
@@ -239,9 +211,8 @@
 
 <div class="board-wrap"><table class="board" id="boardTable"></table></div>
 
-<div class="scoreboard" id="scoreboard"></div>
-
-<div class="waiting-panel" id="unassignedPanel" style="display:none;"></div>
+<div class="players-grid" id="playersGrid"></div>
+<div class="empty-note" id="emptyNote" style="display:none;">No players have joined yet — share the player link and lobby code above.</div>
 
 <footer>Share the player link with anyone who has it — treat your lobby code like a room key.</footer>
 
@@ -263,8 +234,8 @@
   <div class="clue-modal">
     <div class="dd-tag">DAILY DOUBLE!</div>
     <div class="edit-field">
-      <label>Which team is wagering?</label>
-      <select id="wagerTeamSelect"></select>
+      <label>Which player is wagering?</label>
+      <select id="wagerPlayerSelect"></select>
     </div>
     <div class="edit-field">
       <label>Wager amount</label>
@@ -282,7 +253,7 @@
     <div class="edit-field"><label>Question / clue</label><textarea id="editClueText" rows="3"></textarea></div>
     <div class="edit-field"><label>Answer</label><textarea id="editAnswerText" rows="2"></textarea></div>
     <div class="edit-field">
-      <label>Image, GIF, or video (optional)</label>
+      <label>Image, GIF, or video (optional, under 8MB)</label>
       <div class="media-upload-row">
         <button class="outline small" id="uploadMediaBtn">Upload file</button>
         <button class="danger small" id="removeMediaBtn" style="display:none;">Remove media</button>
@@ -352,22 +323,25 @@ connectWs();
 
 function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
 
+function avatarImg(avatar, cls) {
+  const img = document.createElement('img');
+  img.className = 'avatar' + (cls ? ' ' + cls : '');
+  img.src = avatar || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="%230577b8"/></svg>');
+  return img;
+}
+
 function render() {
   if (!S) return;
   document.getElementById('lobbyCode').textContent = S.lobbyCode;
   const playerUrl = location.origin + '/player.html';
   document.getElementById('lobbyUrls').innerHTML =
     'Players join at <b>' + playerUrl + '</b> with code <b>' + S.lobbyCode + '</b>';
-
-  document.getElementById('modeRoundRobinBtn').classList.toggle('active', S.mode === 'roundRobin');
-  document.getElementById('modeFreeForAllBtn').classList.toggle('active', S.mode === 'freeForAll');
   const lockBtn = document.getElementById('lockLobbyBtn');
   lockBtn.textContent = S.locked ? 'Lobby Locked 🔒' : 'Lock Lobby';
   lockBtn.classList.toggle('locked', S.locked);
 
   renderBoard();
-  renderScoreboard();
-  renderUnassigned();
+  renderPlayers();
   renderPlayModal();
 }
 
@@ -378,43 +352,7 @@ document.getElementById('copyLinkBtn').onclick = () => {
     setTimeout(() => { b.textContent = prev; }, 1200);
   });
 };
-
-document.getElementById('modeRoundRobinBtn').onclick = () => send({ type: 'set_mode', mode: 'roundRobin' });
-document.getElementById('modeFreeForAllBtn').onclick = () => send({ type: 'set_mode', mode: 'freeForAll' });
 document.getElementById('lockLobbyBtn').onclick = () => send({ type: 'set_lock', locked: !S.locked });
-
-function avatarImg(avatar, cls) {
-  const img = document.createElement('img');
-  img.className = 'avatar' + (cls ? ' ' + cls : '');
-  img.src = avatar || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="%230577b8"/></svg>');
-  return img;
-}
-
-function renderUnassigned() {
-  const panel = document.getElementById('unassignedPanel');
-  const list = S.unassignedPlayers || [];
-  if (list.length === 0) { panel.style.display = 'none'; return; }
-  panel.style.display = 'block';
-  panel.innerHTML = '';
-  const label = document.createElement('span');
-  label.textContent = 'Waiting to pick a team: ';
-  panel.appendChild(label);
-  list.forEach(p => {
-    const row = document.createElement('span');
-    row.className = 'player-row';
-    row.appendChild(avatarImg(p.avatar, 'small'));
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = p.name;
-    row.appendChild(nameSpan);
-    const kick = document.createElement('button');
-    kick.className = 'kick-x';
-    kick.textContent = '×';
-    kick.title = 'Kick player';
-    kick.onclick = () => { if (confirm('Kick ' + p.name + '? They will need to rejoin.')) send({ type: 'kick_player', playerId: p.id }); };
-    row.appendChild(kick);
-    panel.appendChild(row);
-  });
-}
 
 // ---------- Board ----------
 function renderBoard() {
@@ -479,67 +417,53 @@ function renderBoard() {
   }
 }
 
-// ---------- Scoreboard ----------
-function renderScoreboard() {
-  if (document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('team-name')) return;
-  const el = document.getElementById('scoreboard');
-  el.innerHTML = '';
-  S.teams.forEach((team) => {
+// ---------- Players ----------
+function renderPlayers() {
+  const grid = document.getElementById('playersGrid');
+  const emptyNote = document.getElementById('emptyNote');
+  grid.innerHTML = '';
+  if (!S.players || S.players.length === 0) {
+    emptyNote.style.display = 'block';
+    return;
+  }
+  emptyNote.style.display = 'none';
+
+  const sorted = [...S.players].sort((a, b) => b.score - a.score);
+  sorted.forEach((p) => {
+    const excluded = S.current && (S.current.excludedPlayerIds || []).includes(p.id);
     const card = document.createElement('div');
-    const excluded = S.current && (S.current.excludedTeamIds || []).includes(team.id);
-    card.className = 'team-card' + (excluded ? ' excluded' : '');
+    card.className = 'player-card' + (excluded ? ' excluded' : '');
 
-    const nameInput = document.createElement('input');
-    nameInput.className = 'team-name' + (editMode ? ' editable' : '');
-    nameInput.value = team.name;
-    nameInput.readOnly = !editMode;
-    nameInput.onblur = (e) => send({ type: 'rename_team', teamId: team.id, name: e.target.value });
+    card.appendChild(avatarImg(p.avatar, 'big'));
 
-    const roster = document.createElement('div');
-    roster.className = 'team-roster';
-    const activeId = S.activeTurnPlayers ? S.activeTurnPlayers[team.id] : null;
-    if (team.players.length === 0) {
-      roster.textContent = 'No players yet';
-    } else {
-      team.players.forEach(p => {
-        const row = document.createElement('span');
-        row.className = 'player-row';
-        row.appendChild(avatarImg(p.avatar, 'small'));
-        const nameSpan = document.createElement('span');
-        nameSpan.className = (S.mode === 'roundRobin' && p.id === activeId) ? 'on-clock' : '';
-        nameSpan.textContent = p.name + ((S.mode === 'roundRobin' && p.id === activeId) ? ' 🔔' : '');
-        row.appendChild(nameSpan);
-        const kick = document.createElement('button');
-        kick.className = 'kick-x';
-        kick.textContent = '×';
-        kick.title = 'Kick player';
-        kick.onclick = () => { if (confirm('Kick ' + p.name + '? They will need to rejoin.')) send({ type: 'kick_player', playerId: p.id }); };
-        row.appendChild(kick);
-        roster.appendChild(row);
-      });
-    }
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'p-name';
+    nameDiv.textContent = p.name + (p.connected ? '' : ' (offline)');
+    card.appendChild(nameDiv);
 
     const scoreDiv = document.createElement('div');
-    scoreDiv.className = 'team-score ' + (team.score > 0 ? 'positive' : team.score < 0 ? 'negative' : '');
-    scoreDiv.textContent = '$' + team.score;
+    scoreDiv.className = 'player-score ' + (p.score > 0 ? 'positive' : p.score < 0 ? 'negative' : '');
+    scoreDiv.textContent = '$' + p.score;
+    card.appendChild(scoreDiv);
 
     const btnRow = document.createElement('div');
-    btnRow.className = 'team-btns';
+    btnRow.className = 'player-btns';
     const minus100 = document.createElement('button');
     minus100.className = 'outline'; minus100.textContent = '−100';
-    minus100.onclick = () => send({ type: 'adjust_score', teamId: team.id, delta: -100 });
+    minus100.onclick = () => send({ type: 'adjust_score', playerId: p.id, delta: -100 });
     const plus100 = document.createElement('button');
     plus100.className = 'outline'; plus100.textContent = '+100';
-    plus100.onclick = () => send({ type: 'adjust_score', teamId: team.id, delta: 100 });
+    plus100.onclick = () => send({ type: 'adjust_score', playerId: p.id, delta: 100 });
     btnRow.append(minus100, plus100);
+    card.appendChild(btnRow);
 
-    const rmBtn = document.createElement('button');
-    rmBtn.className = 'remove-team' + (editMode ? ' shown' : '');
-    rmBtn.textContent = 'Remove team';
-    rmBtn.onclick = () => send({ type: 'remove_team', teamId: team.id });
+    const kick = document.createElement('button');
+    kick.className = 'kick-btn';
+    kick.textContent = 'Kick player';
+    kick.onclick = () => { if (confirm('Kick ' + p.name + '? They will need to rejoin.')) send({ type: 'kick_player', playerId: p.id }); };
+    card.appendChild(kick);
 
-    card.append(nameInput, roster, scoreDiv, btnRow, rmBtn);
-    el.appendChild(card);
+    grid.appendChild(card);
   });
 }
 
@@ -553,14 +477,13 @@ function renderPlayModal() {
   const clue = S.board.categories[S.current.catIndex].clues[S.current.clueIndex];
   const catName = S.board.categories[S.current.catIndex].name;
 
-  // Daily Double wager step happens before the clue is shown
   if (S.current.isDailyDouble && !S.current.ddWager) {
     overlay.classList.remove('active');
-    const select = document.getElementById('wagerTeamSelect');
+    const select = document.getElementById('wagerPlayerSelect');
     select.innerHTML = '';
-    S.teams.forEach(t => {
+    S.players.forEach(p => {
       const opt = document.createElement('option');
-      opt.value = t.id; opt.textContent = t.name;
+      opt.value = p.id; opt.textContent = p.name;
       select.appendChild(opt);
     });
     document.getElementById('wagerAmountInput').value = clue.value;
@@ -604,7 +527,6 @@ function renderPlayModal() {
     return;
   }
 
-  // Normal buzzer flow
   if (!S.current.buzzingOpen && !S.current.locked && !S.current.answerShown) {
     statusEl.textContent = 'Read the clue, then open the buzzers.';
     statusEl.classList.add('waiting');
@@ -617,19 +539,18 @@ function renderPlayModal() {
   } else if (S.current.locked && !S.current.answerShown) {
     statusEl.innerHTML = '';
     statusEl.appendChild(avatarImg(S.current.winner.avatar, 'small'));
-    statusEl.appendChild(document.createTextNode(' 🔔 ' + S.current.winner.playerName + ' (' + S.current.winner.teamName + ') buzzed in!'));
+    statusEl.appendChild(document.createTextNode(' 🔔 ' + S.current.winner.playerName + ' buzzed in!'));
     statusEl.classList.add('won');
     actions.appendChild(mkBtn('Show Answer', 'gold', () => send({ type: 'reveal_answer' })));
   } else if (S.current.locked && S.current.answerShown) {
     statusEl.innerHTML = '';
     statusEl.appendChild(avatarImg(S.current.winner.avatar, 'small'));
-    statusEl.appendChild(document.createTextNode(' 🔔 ' + S.current.winner.playerName + ' (' + S.current.winner.teamName + ')'));
+    statusEl.appendChild(document.createTextNode(' 🔔 ' + S.current.winner.playerName));
     statusEl.classList.add('won');
     actions.appendChild(mkBtn('Correct', 'success', () => send({ type: 'judge', result: 'correct' })));
     actions.appendChild(mkBtn('Wrong', 'danger', () => send({ type: 'judge', result: 'wrong' })));
   } else if (!S.current.buzzingOpen && !S.current.locked && S.current.answerShown) {
-    // came from a wrong answer — offer reopen for remaining teams
-    statusEl.textContent = 'Wrong answer locked out. Reopen for remaining teams?';
+    statusEl.textContent = 'Wrong answer locked out. Reopen for everyone else?';
     statusEl.classList.add('wrongflag');
     actions.appendChild(mkBtn('Reopen Buzzing', 'gold', () => send({ type: 'reopen_buzzing' })));
     actions.appendChild(mkBtn('No One Else Got It', 'outline', () => send({ type: 'judge', result: 'skip' })));
@@ -643,9 +564,9 @@ function mkBtn(label, cls, onclick) {
 }
 
 document.getElementById('revealDdBtn').onclick = () => {
-  const teamId = document.getElementById('wagerTeamSelect').value;
+  const playerId = document.getElementById('wagerPlayerSelect').value;
   const wager = Number(document.getElementById('wagerAmountInput').value) || 0;
-  send({ type: 'set_dd_wager', teamId, wager });
+  send({ type: 'set_dd_wager', playerId, wager });
 };
 
 // ---------- Edit Clue modal ----------
@@ -688,7 +609,7 @@ document.getElementById('mediaInput').onchange = (e) => {
   wrap.innerHTML = '<div style="font-size:0.75rem;color:#a7e8ff;">Uploading…</div>';
   const reader = new FileReader();
   reader.onload = (evt) => { pendingMedia = { type: isVideo ? 'video' : 'image', dataUrl: evt.target.result }; renderMediaPreview(pendingMedia); };
-  reader.onerror = () => { alert('Could not read that file — please try again or use a different file.'); renderMediaPreview(pendingMedia && pendingMedia !== undefined ? pendingMedia : null); };
+  reader.onerror = () => { alert('Could not read that file — please try again or use a different file.'); renderMediaPreview(null); };
   reader.readAsDataURL(file);
   e.target.value = '';
 };
@@ -725,16 +646,15 @@ document.getElementById('editToggleBtn').onclick = (e) => {
     document.getElementById('ddSetupOverlay').classList.remove('active');
     document.getElementById('markingBanner').classList.remove('active');
   }
-  renderBoard(); renderScoreboard();
+  renderBoard();
 };
 document.getElementById('addCategoryBtn').onclick = () => { send({ type: 'add_category' }); if (!editMode) document.getElementById('editToggleBtn').click(); };
 document.getElementById('addRowBtn').onclick = () => { send({ type: 'add_row' }); if (!editMode) document.getElementById('editToggleBtn').click(); };
 document.getElementById('resetUsedBtn').onclick = () => send({ type: 'reset_used' });
 document.getElementById('resetScoresBtn').onclick = () => send({ type: 'reset_scores' });
-document.getElementById('addTeamBtn').onclick = () => send({ type: 'add_team' });
 
 document.getElementById('saveBtn').onclick = () => {
-  const data = JSON.stringify({ board: S.board, teams: S.teams }, null, 2);
+  const data = JSON.stringify({ board: S.board }, null, 2);
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

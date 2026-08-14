@@ -76,20 +76,19 @@ function sampleBoard() {
 }
 
 // ---------- State ----------
+// Individual play: no teams. Each player has their own score.
 const state = {
   lobbyCode: genCode(),
-  mode: 'roundRobin', // 'roundRobin' | 'freeForAll'
-  locked: false,      // when true, no new players may join
+  locked: false, // when true, no new players may join
   board: sampleBoard(),
-  teams: [], // {id, name, score, playerIds:[], turnIndex}
   dailyDoubleCount: 1,
   activeDailyDoubles: [], // ["catIndex-clueIndex", ...]
   markingDailyDoubles: false,
   current: null
-  // current: {catIndex, clueIndex, isDailyDouble, buzzingOpen, locked, winner, answerShown, excludedTeamIds, ddWager}
+  // current: {catIndex, clueIndex, isDailyDouble, buzzingOpen, locked, winner, answerShown, excludedPlayerIds, ddWager}
 };
 
-const players = {}; // id -> {id, name, teamId, ws}
+const players = {}; // id -> {id, name, avatar, score, ws}
 const hostSockets = new Set();
 
 function findClue(ci, r) {
@@ -98,26 +97,9 @@ function findClue(ci, r) {
   return cat.clues[r] || null;
 }
 
-function activePlayerForTeam(team) {
-  if (!team || team.playerIds.length === 0) return null;
-  const len = team.playerIds.length;
-  const idx = ((team.turnIndex % len) + len) % len;
-  return team.playerIds[idx];
-}
-
-function advanceAllTurns() {
-  state.teams.forEach((t) => { t.turnIndex += 1; });
-}
-
-function publicTeams() {
-  return state.teams.map((t) => ({
-    id: t.id,
-    name: t.name,
-    score: t.score,
-    turnIndex: t.turnIndex,
-    players: t.playerIds
-      .map((pid) => (players[pid] ? { id: pid, name: players[pid].name, connected: !!players[pid].ws, avatar: players[pid].avatar || null } : null))
-      .filter(Boolean)
+function publicPlayers() {
+  return Object.values(players).map((p) => ({
+    id: p.id, name: p.name, avatar: p.avatar || null, score: p.score, connected: !!p.ws
   }));
 }
 
@@ -132,28 +114,21 @@ function hostStateSnapshot() {
   return {
     type: 'state',
     lobbyCode: state.lobbyCode,
-    mode: state.mode,
     locked: state.locked,
     board: state.board,
-    teams: publicTeams(),
+    players: publicPlayers(),
     dailyDoubleCount: state.dailyDoubleCount,
     activeDailyDoubles: state.activeDailyDoubles,
     markingDailyDoubles: state.markingDailyDoubles,
-    current: state.current,
-    activeTurnPlayers: state.teams.reduce((acc, t) => { acc[t.id] = activePlayerForTeam(t); return acc; }, {}),
-    unassignedPlayers: Object.values(players).filter((p) => !p.teamId).map((p) => ({ id: p.id, name: p.name, connected: !!p.ws, avatar: p.avatar || null }))
+    current: state.current
   };
 }
 
 function playerStateSnapshot(player) {
-  const team = state.teams.find((t) => t.id === player.teamId) || null;
-  const activeTurn = team ? activePlayerForTeam(team) : null;
   let buzzEnabled = false;
-  if (state.current && state.current.buzzingOpen && !state.current.locked && team) {
-    const excluded = (state.current.excludedTeamIds || []).includes(team.id);
-    if (!excluded) {
-      buzzEnabled = state.mode === 'freeForAll' ? true : activeTurn === player.id;
-    }
+  if (state.current && state.current.buzzingOpen && !state.current.locked) {
+    const excluded = (state.current.excludedPlayerIds || []).includes(player.id);
+    if (!excluded) buzzEnabled = true;
   }
   let currentPublic = null;
   if (state.current) {
@@ -169,19 +144,17 @@ function playerStateSnapshot(player) {
       catName: state.board.categories[state.current.catIndex] ? state.board.categories[state.current.catIndex].name : '',
       clueText: clue ? clue.clue : '',
       media: clue ? clue.media : null,
-      excludedTeamIds: state.current.excludedTeamIds || []
+      excludedPlayerIds: state.current.excludedPlayerIds || []
     };
   }
   return {
     type: 'state',
-    you: { id: player.id, name: player.name, teamId: player.teamId, avatar: player.avatar || null },
-    mode: state.mode,
+    you: { id: player.id, name: player.name, avatar: player.avatar || null, score: player.score },
     locked: state.locked,
-    teams: publicTeams(),
+    players: publicPlayers(),
     lobbyCode: state.lobbyCode,
     board: boardSummaryForPlayers(),
     current: currentPublic,
-    activeTurnPlayerId: activeTurn,
     buzzEnabled
   };
 }
@@ -234,7 +207,7 @@ wss.on('connection', (ws) => {
       }
       const name = (msg.name || '').trim().slice(0, 24) || 'Player';
       const id = crypto.randomUUID();
-      players[id] = { id, name, teamId: null, avatar: null, ws };
+      players[id] = { id, name, avatar: null, score: 0, ws };
       ws.role = 'player';
       ws.playerId = id;
       ws.send(JSON.stringify({ type: 'joined', playerId: id }));
@@ -267,37 +240,14 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    if (msg.type === 'player_select_team') {
-      const p = players[ws.playerId];
-      if (!p) return;
-      state.teams.forEach((t) => { t.playerIds = t.playerIds.filter((id) => id !== p.id); });
-      let team = state.teams.find((t) => t.id === msg.teamId);
-      if (msg.newTeamName) {
-        team = { id: crypto.randomUUID(), name: msg.newTeamName.trim().slice(0, 20) || 'New Team', score: 0, playerIds: [], turnIndex: 0 };
-        state.teams.push(team);
-      }
-      if (team) {
-        team.playerIds.push(p.id);
-        p.teamId = team.id;
-      }
-      broadcastAll();
-      return;
-    }
-
     if (msg.type === 'player_buzz') {
       const p = players[ws.playerId];
       if (!p || !state.current) return;
       if (!state.current.buzzingOpen || state.current.locked) return;
-      const team = state.teams.find((t) => t.id === p.teamId);
-      if (!team) return;
-      if ((state.current.excludedTeamIds || []).includes(team.id)) return;
-      if (state.mode === 'roundRobin') {
-        const activeId = activePlayerForTeam(team);
-        if (activeId !== p.id) return;
-      }
+      if ((state.current.excludedPlayerIds || []).includes(p.id)) return;
       state.current.locked = true;
       state.current.buzzingOpen = false;
-      state.current.winner = { playerId: p.id, playerName: p.name, teamId: team.id, teamName: team.name, avatar: p.avatar || null };
+      state.current.winner = { playerId: p.id, playerName: p.name, avatar: p.avatar || null };
       broadcastAll();
       return;
     }
@@ -305,8 +255,8 @@ wss.on('connection', (ws) => {
     // --- everything below is host-only ---
     if (ws.role !== 'host') return;
 
-    if (msg.type === 'set_mode') {
-      state.mode = msg.mode === 'freeForAll' ? 'freeForAll' : 'roundRobin';
+    if (msg.type === 'new_lobby_code') {
+      state.lobbyCode = genCode();
       broadcastAll();
       return;
     }
@@ -315,43 +265,20 @@ wss.on('connection', (ws) => {
       broadcastAll();
       return;
     }
-    if (msg.type === 'new_lobby_code') {
-      state.lobbyCode = genCode();
-      broadcastAll();
-      return;
-    }
-    if (msg.type === 'add_team') {
-      state.teams.push({ id: crypto.randomUUID(), name: msg.name || ('Team ' + (state.teams.length + 1)), score: 0, playerIds: [], turnIndex: 0 });
-      broadcastAll();
-      return;
-    }
-    if (msg.type === 'rename_team') {
-      const t = state.teams.find((t) => t.id === msg.teamId);
-      if (t) t.name = (msg.name || t.name).slice(0, 20);
-      broadcastAll();
-      return;
-    }
-    if (msg.type === 'remove_team') {
-      state.teams = state.teams.filter((t) => t.id !== msg.teamId);
-      Object.values(players).forEach((p) => { if (p.teamId === msg.teamId) p.teamId = null; });
-      broadcastAll();
-      return;
-    }
     if (msg.type === 'adjust_score') {
-      const t = state.teams.find((t) => t.id === msg.teamId);
-      if (t) t.score += msg.delta;
+      const p = players[msg.playerId];
+      if (p) p.score += msg.delta;
       broadcastAll();
       return;
     }
     if (msg.type === 'reset_scores') {
-      state.teams.forEach((t) => { t.score = 0; });
+      Object.values(players).forEach((p) => { p.score = 0; });
       broadcastAll();
       return;
     }
     if (msg.type === 'kick_player') {
       const p = players[msg.playerId];
       if (p) {
-        state.teams.forEach((t) => { t.playerIds = t.playerIds.filter((id) => id !== p.id); });
         if (p.ws) p.ws.send(JSON.stringify({ type: 'kicked' }));
         delete players[msg.playerId];
       }
@@ -471,7 +398,7 @@ wss.on('connection', (ws) => {
         locked: false,
         winner: null,
         answerShown: false,
-        excludedTeamIds: [],
+        excludedPlayerIds: [],
         ddWager: null
       };
       broadcastAll();
@@ -479,7 +406,7 @@ wss.on('connection', (ws) => {
     }
     if (msg.type === 'set_dd_wager') {
       if (state.current && state.current.isDailyDouble) {
-        state.current.ddWager = { teamId: msg.teamId, wager: Number(msg.wager) || 0 };
+        state.current.ddWager = { playerId: msg.playerId, wager: Number(msg.wager) || 0 };
       }
       broadcastAll();
       return;
@@ -512,38 +439,35 @@ wss.on('connection', (ws) => {
       const clue = findClue(state.current.catIndex, state.current.clueIndex);
       if (!clue) return;
       const isDD = state.current.isDailyDouble;
-      let team = null;
+      let player = null;
       let amount = 0;
       if (isDD) {
         if (state.current.ddWager) {
-          team = state.teams.find((t) => t.id === state.current.ddWager.teamId);
+          player = players[state.current.ddWager.playerId];
           amount = state.current.ddWager.wager;
         }
       } else if (state.current.winner) {
-        team = state.teams.find((t) => t.id === state.current.winner.teamId);
+        player = players[state.current.winner.playerId];
         amount = clue.value;
       }
 
       if (msg.result === 'correct') {
-        if (team) team.score += amount;
+        if (player) player.score += amount;
         clue.used = true;
-        advanceAllTurns();
         state.current = null;
       } else if (msg.result === 'wrong') {
-        if (team) team.score -= amount;
+        if (player) player.score -= amount;
         if (isDD) {
           clue.used = true;
-          advanceAllTurns();
           state.current = null;
         } else {
-          if (team) state.current.excludedTeamIds.push(team.id);
+          if (player) state.current.excludedPlayerIds.push(player.id);
           state.current.locked = false;
           state.current.winner = null;
           state.current.buzzingOpen = false;
         }
       } else if (msg.result === 'skip') {
         clue.used = true;
-        advanceAllTurns();
         state.current = null;
       }
       broadcastAll();

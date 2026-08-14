@@ -35,10 +35,11 @@ Railway (railway.app) and Fly.io (fly.io) are similar alternatives if you want o
 
 ## Playing
 
-- **Edit Mode** (top-left, host screen only) lets you rename categories/teams, edit questions and answers, upload an image/GIF/video per question, and set up Daily Doubles — all before or between rounds.
-- **Round Robin vs Free-for-All** (top bar): choose whether teams take turns having one designated buzzer-holder each round, or anyone on the team can buzz in.
-- Click a question to open it, read it aloud, then click **Start Buzzing** to unlock players' phones. The first buzz locks everyone else out instantly. Judge Correct/Wrong — a wrong answer excludes that team and lets you reopen buzzing for the rest.
-- **Daily Double**: mark questions with a ✓ in the Daily Double panel, then Shuffle to secretly place one (or more). No buzzing needed — you just pick the wagering team and amount.
+- **Edit Mode** (top-left, host screen only) lets you rename categories, edit questions and answers, upload an image/GIF/video per question, and set up Daily Doubles — all before or between rounds.
+- Players compete individually — there are no teams. Everyone who joins can buzz on every question.
+- Click a question to open it, read it aloud, then click **Start Buzzing** to unlock players' phones. The first buzz locks everyone else out instantly. Judge Correct/Wrong — a wrong answer excludes that player and lets you reopen buzzing for everyone else.
+- **Daily Double**: mark questions with a ✓ in the Daily Double panel, then Shuffle to secretly place one (or more). No buzzing needed — you just pick the wagering player and amount.
+- **Custom look**: drop `nppardyboard.png` (background), `nakedpoolpardy.png` (title graphic), and `BRLNSB.TTF` (font) into the `public` folder to personalize the board — no code changes needed, they're already wired up.
 
 ## Notes
 
