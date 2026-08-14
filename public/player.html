@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nakedpoolpardy — Buzzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#050d24; --navy-cell:#132a63; --gold:#f5c518; --gold-dim:#c99f0f;
+    --white:#f4f6ff; --danger:#e0463f; --success:#3fbf6f;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0; min-height:100vh; display:flex; flex-direction:column;
+    background:radial-gradient(ellipse at 50% -10%, #14265c 0%, var(--navy-deep) 55%), var(--navy-deep);
+    font-family:'Inter',sans-serif; color:var(--white); padding:20px; overflow-x:hidden;
+  }
+  h1.marquee{
+    font-family:'Anton',sans-serif; text-align:center; font-size:2.2rem; letter-spacing:4px; margin:0 0 20px;
+    background:linear-gradient(180deg,#fff 0%, var(--gold) 55%, var(--gold-dim) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .screen{ flex:1; display:flex; flex-direction:column; justify-content:center; gap:16px; max-width:420px; margin:0 auto; width:100%; }
+  label{ font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; color:#8ea0d6; }
+  input[type=text]{
+    width:100%; background:#0c1a41; border:1px solid #33478f; border-radius:10px; color:var(--white);
+    font-family:'Inter',sans-serif; font-size:1.1rem; padding:14px; text-align:center; letter-spacing:2px;
+  }
+  input[type=text]:focus{ outline:none; border-color:var(--gold); }
+  button{
+    font-family:'Inter',sans-serif; font-weight:800; font-size:1rem; letter-spacing:0.5px; text-transform:uppercase;
+    border:none; border-radius:10px; padding:16px; cursor:pointer; color:var(--navy-deep); background:var(--gold);
+  }
+  button:disabled{ opacity:0.35; }
+  button.outline{ background:transparent; color:var(--white); border:1.5px solid #33478f; }
+  .error{ color:var(--danger); font-size:0.85rem; text-align:center; min-height:1.2em; }
+
+  .team-list{ display:flex; flex-direction:column; gap:10px; }
+  .team-option{
+    background:#0c1a41; border:1px solid #26398a; border-radius:10px; padding:14px; text-align:left;
+    color:var(--white); font-weight:700; display:flex; justify-content:space-between; align-items:center;
+  }
+  .team-option span.count{ color:#8ea0d6; font-weight:400; font-size:0.8rem; }
+  .team-option:hover{ border-color:var(--gold); }
+
+  .buzzer-screen{ text-align:center; }
+  .you-are{ font-size:0.85rem; color:#8ea0d6; margin-bottom:4px; }
+  .you-team{ font-family:'Anton',sans-serif; color:var(--gold); font-size:1.3rem; margin-bottom:18px; }
+  .turn-note{ font-size:0.8rem; color:#c9d4f5; margin-bottom:18px; min-height:2.4em; }
+  .turn-note b{ color:var(--gold); }
+
+  .buzzer-btn{
+    width:230px; height:230px; border-radius:50%; margin:0 auto; display:flex; align-items:center; justify-content:center;
+    font-family:'Anton',sans-serif; font-size:1.6rem; letter-spacing:2px; border:none; cursor:pointer;
+    background:radial-gradient(circle at 35% 30%, #ff6b5e, var(--danger) 60%, #8c1f1a 100%);
+    color:#fff; box-shadow:0 10px 0 #7a1a15, 0 14px 30px rgba(224,70,63,0.4);
+    transition:transform .06s ease, box-shadow .06s ease;
+  }
+  .buzzer-btn:active:not(:disabled){ transform:translateY(8px); box-shadow:0 2px 0 #7a1a15, 0 6px 16px rgba(224,70,63,0.3); }
+  .buzzer-btn:disabled{
+    background:radial-gradient(circle at 35% 30%, #35406e, #202e5c 60%, #131c3d 100%);
+    box-shadow:0 10px 0 #0e1530; color:#5a6cae; cursor:not-allowed;
+  }
+  .buzzer-btn.won{
+    background:radial-gradient(circle at 35% 30%, #6bffa0, var(--success) 60%, #1a7a44 100%);
+    box-shadow:0 10px 0 #145c33;
+  }
+
+  .mini-score{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:24px; }
+  .mini-score .t{ background:#0c1a41; border:1px solid #26398a; border-radius:8px; padding:8px 12px; font-size:0.7rem; }
+  .mini-score .t b{ color:var(--gold); display:block; font-family:'Anton',sans-serif; font-size:0.95rem; }
+</style>
+</head>
+<body>
+<h1 class="marquee">Nakedpoolpardy!</h1>
+
+<!-- JOIN -->
+<div class="screen" id="joinScreen">
+  <div>
+    <label>Lobby code</label>
+    <input type="text" id="codeInput" maxlength="4" placeholder="ABCD" autocapitalize="characters">
+  </div>
+  <div>
+    <label>Your name</label>
+    <input type="text" id="nameInput" maxlength="24" placeholder="Your name">
+  </div>
+  <button id="joinBtn">Join Game</button>
+  <div class="error" id="joinError"></div>
+</div>
+
+<!-- TEAM SELECT -->
+<div class="screen" id="teamScreen" style="display:none;">
+  <label>Pick a team</label>
+  <div class="team-list" id="teamList"></div>
+  <div style="display:flex;gap:8px;">
+    <input type="text" id="newTeamInput" placeholder="New team name" style="flex:1;">
+    <button class="outline" id="newTeamBtn" style="flex:0 0 auto;">Create</button>
+  </div>
+</div>
+
+<!-- BUZZER -->
+<div class="screen buzzer-screen" id="buzzerScreen" style="display:none;">
+  <div class="you-are" id="youAre"></div>
+  <div class="you-team" id="youTeam"></div>
+  <div class="turn-note" id="turnNote"></div>
+  <button class="buzzer-btn" id="buzzerBtn" disabled>WAIT</button>
+  <div class="mini-score" id="miniScore"></div>
+</div>
+
+<script>
+let ws = null;
+let playerId = sessionStorage.getItem('jeopardy_player_id') || null;
+let joinedCode = sessionStorage.getItem('jeopardy_lobby_code') || null;
+let S = null;
+
+function connect() {
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host);
+  ws.onopen = () => {
+    if (playerId) ws.send(JSON.stringify({ type: 'player_reconnect', playerId }));
+  };
+  ws.onmessage = (evt) => {
+    const msg = JSON.parse(evt.data);
+    if (msg.type === 'joined') {
+      playerId = msg.playerId;
+      sessionStorage.setItem('jeopardy_player_id', playerId);
+      showScreen('teamScreen');
+    } else if (msg.type === 'join_error') {
+      document.getElementById('joinError').textContent = msg.message;
+      sessionStorage.removeItem('jeopardy_player_id');
+      playerId = null;
+      showScreen('joinScreen');
+    } else if (msg.type === 'kicked') {
+      sessionStorage.removeItem('jeopardy_player_id');
+      alert('You were removed from the game.');
+      location.reload();
+    } else if (msg.type === 'state') {
+      S = msg;
+      render();
+    }
+  };
+  ws.onclose = () => { setTimeout(connect, 1500); };
+}
+connect();
+
+function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+function showScreen(id) {
+  ['joinScreen', 'teamScreen', 'buzzerScreen'].forEach(s => {
+    document.getElementById(s).style.display = (s === id) ? 'flex' : 'none';
+  });
+}
+
+document.getElementById('joinBtn').onclick = () => {
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  const name = document.getElementById('nameInput').value.trim();
+  if (code.length !== 4) { document.getElementById('joinError').textContent = 'Enter the 4-letter lobby code.'; return; }
+  if (!name) { document.getElementById('joinError').textContent = 'Enter your name.'; return; }
+  document.getElementById('joinError').textContent = '';
+  sessionStorage.setItem('jeopardy_lobby_code', code);
+  send({ type: 'player_join', lobbyCode: code, name });
+};
+
+document.getElementById('newTeamBtn').onclick = () => {
+  const name = document.getElementById('newTeamInput').value.trim();
+  if (!name) return;
+  send({ type: 'player_select_team', newTeamName: name });
+};
+
+function render() {
+  if (!S || !S.you) return;
+
+  if (!S.you.teamId) {
+    showScreen('teamScreen');
+    const list = document.getElementById('teamList');
+    list.innerHTML = '';
+    S.teams.forEach(t => {
+      const div = document.createElement('div');
+      div.className = 'team-option';
+      div.innerHTML = '<span>' + t.name + '</span><span class="count">' + t.players.length + ' player' + (t.players.length === 1 ? '' : 's') + '</span>';
+      div.onclick = () => send({ type: 'player_select_team', teamId: t.id });
+      list.appendChild(div);
+    });
+    return;
+  }
+
+  showScreen('buzzerScreen');
+  const myTeam = S.teams.find(t => t.id === S.you.teamId);
+  document.getElementById('youAre').textContent = S.you.name;
+  document.getElementById('youTeam').textContent = myTeam ? myTeam.name : '';
+
+  const btn = document.getElementById('buzzerBtn');
+  const note = document.getElementById('turnNote');
+  btn.classList.remove('won');
+
+  if (!S.current) {
+    btn.disabled = true; btn.textContent = 'WAIT';
+    note.innerHTML = 'Waiting for the host to open a question…';
+  } else if (S.current.isDailyDouble) {
+    btn.disabled = true; btn.textContent = 'WAIT';
+    note.innerHTML = '⭐ Daily Double in progress — no buzzing needed.';
+  } else if (S.current.locked) {
+    if (S.current.winner && S.current.winner.playerId === S.you.id) {
+      btn.disabled = true; btn.textContent = 'GOT IT!'; btn.classList.add('won');
+      note.innerHTML = 'You buzzed in first!';
+    } else {
+      btn.disabled = true; btn.textContent = 'LOCKED';
+      note.innerHTML = S.current.winner ? ('<b>' + S.current.winner.playerName + '</b> (' + S.current.winner.teamName + ') buzzed first.') : 'Someone else buzzed first.';
+    }
+  } else if (S.current.buzzingOpen) {
+    if (S.buzzEnabled) {
+      btn.disabled = false; btn.textContent = 'BUZZ IN';
+      note.innerHTML = 'Buzz now!';
+    } else {
+      btn.disabled = true; btn.textContent = 'WAIT';
+      if (S.mode === 'roundRobin' && myTeam) {
+        const activeId = S.activeTurnPlayerId;
+        const activePlayer = myTeam.players.find(p => p.id === activeId);
+        note.innerHTML = activePlayer ? ("It's <b>" + activePlayer.name + "</b>'s turn to buzz for your team.") : 'Waiting for your team.';
+      } else {
+        note.innerHTML = 'Your team already tried this question.';
+      }
+    }
+  } else {
+    btn.disabled = true; btn.textContent = 'WAIT';
+    note.innerHTML = 'Get ready — buzzers will open soon.';
+  }
+
+  const mini = document.getElementById('miniScore');
+  mini.innerHTML = '';
+  S.teams.forEach(t => {
+    const d = document.createElement('div');
+    d.className = 't';
+    d.innerHTML = t.name + '<b>$' + t.score + '</b>';
+    mini.appendChild(d);
+  });
+}
+
+document.getElementById('buzzerBtn').onclick = () => {
+  send({ type: 'player_buzz' });
+  if (navigator.vibrate) navigator.vibrate(60);
+};
+</script>
+</body>
+</html>
