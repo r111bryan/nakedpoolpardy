@@ -60,32 +60,34 @@
   .avatar-row{ display:flex; align-items:center; justify-content:center; gap:12px; }
 
   /* GAME screen (no join/team steps once in) */
-  .game-screen{ flex:1; display:flex; flex-direction:column; gap:14px; max-width:520px; margin:0 auto; width:100%; padding-bottom:10px; }
+  .game-screen{ flex:1; display:flex; flex-direction:column; gap:16px; max-width:1100px; margin:0 auto; width:100%; padding-bottom:10px; }
 
-  /* Live board — transposed: one row per category, values in a horizontal strip */
-  .board-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  table.mini-board{ border-collapse:separate; border-spacing:5px; table-layout:fixed; }
-  .mini-cat{
-    background:linear-gradient(180deg,var(--navy-cell),#013a63); border:1px solid #0577b8; border-radius:8px;
-    padding:10px 5px; text-align:center; font-family:'PartyFont','Anton',sans-serif; font-size:0.85rem;
-    letter-spacing:0.3px; text-transform:uppercase; color:var(--white); width:92px; line-height:1.25;
+  /* Live board — same visual style as the host screen's board */
+  .board-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table.board{ width:100%; border-collapse:separate; border-spacing:6px; table-layout:fixed; margin:0 auto; }
+  .cat-cell{
+    background:linear-gradient(180deg,var(--navy-cell),#013a63); border:1px solid #0577b8; border-radius:10px;
+    padding:10px 6px; text-align:center; font-family:'PartyFont','Anton',sans-serif; font-size:clamp(0.55rem,3vw,0.85rem);
+    letter-spacing:0.4px; text-transform:uppercase; color:var(--white); min-height:56px; vertical-align:middle; min-width:64px;
   }
-  .mini-clue{
-    background:#013a63; border:1px solid #045c9c; border-radius:8px; text-align:center;
-    font-family:'PartyFont','Anton',sans-serif; color:var(--gold); font-size:1.4rem; height:60px; width:92px;
+  .clue-cell{
+    background:linear-gradient(180deg,#023e7d,#012e52); border:1px solid #045c9c; border-radius:10px;
+    text-align:center; font-family:'PartyFont','Anton',sans-serif; color:var(--gold); font-size:clamp(1rem,4.5vw,1.5rem);
+    height:56px; min-width:64px;
   }
-  .mini-clue.used{ color:#1477b0; background:#013256; }
+  .clue-cell.used{ color:#1477b0; background:#013256; }
 
-  /* Clue view */
-  .clue-view{ background:#024a7a; border:1px solid #0577b8; border-radius:14px; padding:20px; }
-  .clue-cat-tag{ font-family:'PartyFont','Anton',sans-serif; color:var(--gold); font-size:1rem; letter-spacing:1px; margin-bottom:10px; text-align:center; }
-  .clue-media-p{ max-width:100%; max-height:220px; border-radius:8px; margin:0 auto 12px; display:block; }
-  .clue-text-p{ font-family:'PartyFont','Anton',sans-serif; font-size:1.2rem; line-height:1.4; text-align:center; }
+  /* Clue view — same styling family as the host's clue modal */
+  .clue-view{ background:#024a7a; border:2px solid var(--gold); border-radius:16px; padding:24px; box-shadow:0 0 40px rgba(255,214,10,0.1); }
+  .clue-cat-tag{ font-family:'PartyFont','Anton',sans-serif; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:14px; text-align:center; }
+  .clue-media-p{ max-width:100%; max-height:220px; border-radius:8px; margin:0 auto 14px; display:block; border:1px solid #0577b8; }
+  .clue-text-p{ font-family:'PartyFont','Anton',sans-serif; font-size:1.3rem; line-height:1.4; text-align:center; }
 
   .turn-note{ font-size:0.85rem; color:#d6f7ff; text-align:center; min-height:1.4em; }
   .turn-note b{ color:var(--gold); }
 
-  .buzzer-wrap{ display:flex; justify-content:center; }
+  .buzzer-wrap{ display:none; justify-content:center; margin-top:4px; }
+  .buzzer-wrap.shown{ display:flex; flex-direction:column; align-items:center; gap:10px; }
   .buzzer-btn{
     width:210px; height:210px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-family:'PartyFont','Anton',sans-serif; font-size:1.5rem; letter-spacing:2px; border:none; cursor:pointer;
@@ -147,7 +149,7 @@
 
 <!-- GAME (board + clue + buzzer + leaderboard) -->
 <div class="game-screen" id="gameScreen" style="display:none;">
-  <div class="board-scroll" id="liveBoardWrap" style="display:none;"><table class="mini-board" id="miniBoardTable"></table></div>
+  <div class="board-wrap" id="liveBoardWrap" style="display:none;"><table class="board" id="miniBoardTable"></table></div>
 
   <div class="clue-view" id="clueView" style="display:none;">
     <div class="clue-cat-tag" id="clueCatTag"></div>
@@ -158,7 +160,7 @@
 
   <div class="turn-note" id="turnNote"></div>
 
-  <div class="buzzer-wrap"><button class="buzzer-btn" id="buzzerBtn" disabled>WAIT</button></div>
+  <div class="buzzer-wrap" id="buzzerWrap"><button class="buzzer-btn" id="buzzerBtn" disabled>WAIT</button></div>
 
   <div class="leaderboard">
     <div class="leaderboard-label">Players</div>
@@ -270,14 +272,20 @@ function render() {
 
   const liveBoardWrap = document.getElementById('liveBoardWrap');
   const clueView = document.getElementById('clueView');
+  const buzzerWrap = document.getElementById('buzzerWrap');
+  const note = document.getElementById('turnNote');
 
   if (!S.current) {
     liveBoardWrap.style.display = 'block';
     clueView.style.display = 'none';
+    buzzerWrap.classList.remove('shown');
+    note.style.display = 'none';
     renderLiveBoard();
   } else {
     liveBoardWrap.style.display = 'none';
     clueView.style.display = 'block';
+    buzzerWrap.classList.add('shown');
+    note.style.display = 'block';
     document.getElementById('clueCatTag').textContent = S.current.isDailyDouble
       ? 'DAILY DOUBLE — ' + S.current.catName.toUpperCase()
       : S.current.catName.toUpperCase() + ' — $' + S.current.value;
@@ -292,12 +300,10 @@ function render() {
   }
 
   const btn = document.getElementById('buzzerBtn');
-  const note = document.getElementById('turnNote');
   btn.classList.remove('won');
 
   if (!S.current) {
     btn.disabled = true; btn.textContent = 'WAIT';
-    note.innerHTML = 'Waiting for the host to open a question…';
   } else if (S.current.isDailyDouble) {
     btn.disabled = true; btn.textContent = 'WAIT';
     note.innerHTML = '⭐ Daily Double in progress — no buzzing needed.';
@@ -333,7 +339,7 @@ function renderLiveBoard() {
   const catRow = document.createElement('tr');
   S.board.forEach(cat => {
     const td = document.createElement('td');
-    td.className = 'mini-cat';
+    td.className = 'cat-cell';
     td.textContent = cat.name;
     catRow.appendChild(td);
   });
@@ -346,7 +352,7 @@ function renderLiveBoard() {
       const clue = cat.clues[r];
       const td = document.createElement('td');
       if (!clue) { tr.appendChild(td); return; }
-      td.className = 'mini-clue' + (clue.used ? ' used' : '');
+      td.className = 'clue-cell' + (clue.used ? ' used' : '');
       td.textContent = clue.used ? '' : ('$' + clue.value);
       tr.appendChild(td);
     });
