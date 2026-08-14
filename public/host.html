@@ -275,13 +275,15 @@
       </div>
       <div class="media-preview-wrap" id="mediaPreviewWrap"></div>
     </div>
-    <div class="edit-field puzzle-field" id="puzzleFieldWrap" style="display:none;">
-      <label>This question is marked as a Daily Double ✓ — it plays as an Ordering Puzzle: solving pays 2× the point value; a wrong guess locks that player out until everyone's had a turn.</label>
-      <label style="margin-top:10px;">Names, one per line, in the CORRECT order — this is the secret answer</label>
-      <textarea id="puzzleNamesText" rows="8" placeholder="Sam&#10;Tay&#10;Jess&#10;Robin&#10;..."></textarea>
-    </div>
-    <div class="edit-field" id="puzzleHintWrap" style="display:none;">
-      <label style="color:#8fd8f0;">Mark this question with ✓ in the Daily Double panel to turn it into an Ordering Puzzle.</label>
+    <div class="edit-field puzzle-field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="puzzleToggle" style="width:auto;">
+        Make this a Daily Double Ordering Puzzle (drag names into order — solving pays 2× the point value)
+      </label>
+      <div id="puzzleNamesWrap" style="display:none;margin-top:10px;">
+        <label>Names, one per line, in the CORRECT order — this is the secret answer</label>
+        <textarea id="puzzleNamesText" rows="8" placeholder="Sam&#10;Tay&#10;Jess&#10;Robin&#10;..."></textarea>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="success" id="saveClueBtn">Save</button>
@@ -429,11 +431,7 @@ function renderBoard() {
           td.appendChild(badge);
         }
         td.onclick = marking
-          ? () => {
-              const willMark = !clue.dd;
-              send({ type: 'toggle_dd_mark', catIndex: ci, clueIndex: r });
-              if (willMark) openEditClue(ci, r, true); // just marked it — jump straight to entering the puzzle names
-            }
+          ? () => send({ type: 'toggle_dd_mark', catIndex: ci, clueIndex: r })
           : () => openEditClue(ci, r);
       } else {
         td.textContent = clue.used ? '' : ('$' + clue.value);
@@ -656,7 +654,7 @@ document.getElementById('revealDdBtn').onclick = () => {
 };
 
 // ---------- Edit Clue modal ----------
-function openEditClue(catIndex, clueIndex, forcePuzzleFields) {
+function openEditClue(catIndex, clueIndex) {
   editingClue = { catIndex, clueIndex };
   pendingMedia = undefined;
   const clue = S.board.categories[catIndex].clues[clueIndex];
@@ -665,12 +663,14 @@ function openEditClue(catIndex, clueIndex, forcePuzzleFields) {
   document.getElementById('editAnswerText').value = clue.answer;
   renderMediaPreview(clue.media);
   const hasPuzzle = !!(clue.puzzle && clue.puzzle.names && clue.puzzle.names.length);
-  const showPuzzle = forcePuzzleFields || clue.dd;
-  document.getElementById('puzzleFieldWrap').style.display = showPuzzle ? 'block' : 'none';
-  document.getElementById('puzzleHintWrap').style.display = showPuzzle ? 'none' : 'block';
+  document.getElementById('puzzleToggle').checked = hasPuzzle;
+  document.getElementById('puzzleNamesWrap').style.display = hasPuzzle ? 'block' : 'none';
   document.getElementById('puzzleNamesText').value = hasPuzzle ? clue.puzzle.names.join('\n') : '';
   document.getElementById('editOverlay').classList.add('active');
 }
+document.getElementById('puzzleToggle').onchange = (e) => {
+  document.getElementById('puzzleNamesWrap').style.display = e.target.checked ? 'block' : 'none';
+};
 function renderMediaPreview(media) {
   const wrap = document.getElementById('mediaPreviewWrap');
   const removeBtn = document.getElementById('removeMediaBtn');
@@ -729,12 +729,17 @@ document.getElementById('mediaInput').onchange = (e) => {
 };
 document.getElementById('removeMediaBtn').onclick = () => { pendingMedia = null; renderMediaPreview(null); };
 document.getElementById('saveClueBtn').onclick = () => {
-  const showingPuzzleFields = document.getElementById('puzzleFieldWrap').style.display === 'block';
+  const puzzleOn = document.getElementById('puzzleToggle').checked;
   let puzzlePayload = null;
-  if (showingPuzzleFields) {
+  let forceDD = undefined;
+  if (puzzleOn) {
     const names = document.getElementById('puzzleNamesText').value.split('\n').map(s => s.trim()).filter(Boolean);
-    if (names.length >= 2) puzzlePayload = { names };
-    // fewer than 2 names left blank/incomplete: this Daily Double just plays as a normal wager instead
+    if (names.length < 2) {
+      alert('Add at least 2 names (one per line) for the Ordering Puzzle, or uncheck the box.');
+      return;
+    }
+    puzzlePayload = { names };
+    forceDD = true; // checking this box also marks the question as a Daily Double, so it can actually get shuffled into play
   }
   send({
     type: 'edit_clue', catIndex: editingClue.catIndex, clueIndex: editingClue.clueIndex,
@@ -742,7 +747,8 @@ document.getElementById('saveClueBtn').onclick = () => {
     clue: document.getElementById('editClueText').value,
     answer: document.getElementById('editAnswerText').value,
     media: pendingMedia,
-    puzzle: puzzlePayload
+    puzzle: puzzlePayload,
+    dd: forceDD
   });
   closeEditModal();
 };
