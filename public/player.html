@@ -63,18 +63,18 @@
   .game-screen{ flex:1; display:flex; flex-direction:column; gap:14px; max-width:520px; margin:0 auto; width:100%; padding-bottom:10px; }
 
   /* Live board — transposed: one row per category, values in a horizontal strip */
-  .board-list{ display:flex; flex-direction:column; gap:8px; }
-  .board-cat-row{ background:#013a63; border:1px solid #0577b8; border-radius:12px; padding:10px 12px; }
-  .board-cat-name{
-    font-family:'PartyFont','Anton',sans-serif; font-size:0.95rem; color:var(--gold); text-transform:uppercase;
-    margin-bottom:8px; letter-spacing:0.5px; text-align:center;
+  .board-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table.mini-board{ border-collapse:separate; border-spacing:5px; table-layout:fixed; }
+  .mini-cat{
+    background:linear-gradient(180deg,var(--navy-cell),#013a63); border:1px solid #0577b8; border-radius:8px;
+    padding:8px 4px; text-align:center; font-family:'PartyFont','Anton',sans-serif; font-size:0.62rem;
+    letter-spacing:0.3px; text-transform:uppercase; color:var(--white); width:78px; line-height:1.2;
   }
-  .board-values-row{ display:flex; gap:6px; }
-  .board-value-cell{
-    flex:1; background:#0466c8; border:1px solid #045c9c; border-radius:8px; text-align:center;
-    padding:12px 0; font-family:'PartyFont','Anton',sans-serif; color:var(--gold); font-size:1.15rem;
+  .mini-clue{
+    background:#013a63; border:1px solid #045c9c; border-radius:8px; text-align:center;
+    font-family:'PartyFont','Anton',sans-serif; color:var(--gold); font-size:1.05rem; height:52px; width:78px;
   }
-  .board-value-cell.used{ background:#013256; color:#1477b0; }
+  .mini-clue.used{ color:#1477b0; background:#013256; }
 
   /* Clue view */
   .clue-view{ background:#024a7a; border:1px solid #0577b8; border-radius:14px; padding:20px; }
@@ -121,7 +121,7 @@
 </style>
 </head>
 <body>
-<h1 class="marquee">Nakedpoolpardy!</h1>
+<img class="title-image" src="nakedpoolpardy.png" alt="Nakedpoolpardy!">
 
 <!-- JOIN -->
 <div class="screen" id="joinScreen">
@@ -147,7 +147,7 @@
 
 <!-- GAME (board + clue + buzzer + leaderboard) -->
 <div class="game-screen" id="gameScreen" style="display:none;">
-  <div class="board-list" id="liveBoardWrap" style="display:none;"></div>
+  <div class="board-scroll" id="liveBoardWrap" style="display:none;"><table class="mini-board" id="miniBoardTable"></table></div>
 
   <div class="clue-view" id="clueView" style="display:none;">
     <div class="clue-cat-tag" id="clueCatTag"></div>
@@ -272,7 +272,7 @@ function render() {
   const clueView = document.getElementById('clueView');
 
   if (!S.current) {
-    liveBoardWrap.style.display = 'flex';
+    liveBoardWrap.style.display = 'block';
     clueView.style.display = 'none';
     renderLiveBoard();
   } else {
@@ -326,27 +326,32 @@ function render() {
 }
 
 function renderLiveBoard() {
-  const wrap = document.getElementById('liveBoardWrap');
-  wrap.innerHTML = '';
-  if (!S.board) return;
+  const table = document.getElementById('miniBoardTable');
+  if (!S.board) { table.innerHTML = ''; return; }
+  table.innerHTML = '';
+
+  const catRow = document.createElement('tr');
   S.board.forEach(cat => {
-    const row = document.createElement('div');
-    row.className = 'board-cat-row';
-    const name = document.createElement('div');
-    name.className = 'board-cat-name';
-    name.textContent = cat.name;
-    row.appendChild(name);
-    const values = document.createElement('div');
-    values.className = 'board-values-row';
-    cat.clues.forEach(clue => {
-      const cell = document.createElement('div');
-      cell.className = 'board-value-cell' + (clue.used ? ' used' : '');
-      cell.textContent = clue.used ? '' : ('$' + clue.value);
-      values.appendChild(cell);
-    });
-    row.appendChild(values);
-    wrap.appendChild(row);
+    const td = document.createElement('td');
+    td.className = 'mini-cat';
+    td.textContent = cat.name;
+    catRow.appendChild(td);
   });
+  table.appendChild(catRow);
+
+  const rowCount = Math.max(...S.board.map(c => c.clues.length), 0);
+  for (let r = 0; r < rowCount; r++) {
+    const tr = document.createElement('tr');
+    S.board.forEach(cat => {
+      const clue = cat.clues[r];
+      const td = document.createElement('td');
+      if (!clue) { tr.appendChild(td); return; }
+      td.className = 'mini-clue' + (clue.used ? ' used' : '');
+      td.textContent = clue.used ? '' : ('$' + clue.value);
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  }
 }
 
 function renderLeaderboard() {
