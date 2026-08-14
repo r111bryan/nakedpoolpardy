@@ -35,10 +35,13 @@ Railway (railway.app) and Fly.io (fly.io) are similar alternatives if you want o
 
 ## Playing
 
-- **Edit Mode** (top-left, host screen only) lets you rename categories/teams, edit questions and answers, upload an image/GIF/video per question, and set up Daily Doubles — all before or between rounds.
-- **Round Robin vs Free-for-All** (top bar): choose whether teams take turns having one designated buzzer-holder each round, or anyone on the team can buzz in.
-- Click a question to open it, read it aloud, then click **Start Buzzing** to unlock players' phones. The first buzz locks everyone else out instantly. Judge Correct/Wrong — a wrong answer excludes that team and lets you reopen buzzing for the rest.
-- **Daily Double**: mark questions with a ✓ in the Daily Double panel, then Shuffle to secretly place one (or more). No buzzing needed — you just pick the wagering team and amount.
+- **Edit Mode** (top-right wrench icon, host screen only) lets you rename categories, edit questions and answers, upload an image/GIF/video per question, and set up Daily Doubles — all before or between rounds.
+- Players compete individually — there are no teams. Everyone who joins can buzz on every question.
+- Click a question to open it, read it aloud, then click **Start Buzzing** to unlock players' phones. The first buzz locks everyone else out instantly. Judge Correct/Wrong — a wrong answer excludes that player and lets you reopen buzzing for everyone else.
+- **Daily Double**: mark questions with a ✓ in the Daily Double panel, then Shuffle to secretly place one (or more). No buzzing needed — you just pick the wagering player and amount.
+- **Ordering Puzzle minigame**: click any question in Edit Mode (no special marking mode needed) and check "Make this a Daily Double Ordering Puzzle" — a box appears for the names, one per line, in the CORRECT secret order. Saving it automatically marks that question as a Daily Double too, so make sure to click "Shuffle Daily Doubles" in the Daily Double panel afterward so it actually gets placed into the game. During play, buzzing in gets a player a chance to drag those names into order; everyone sees how many they got in the exact right spot (but not which ones), so it doubles as a clue for the next attempt. A wrong guess locks that player out until everyone still in the game has had a turn, then it opens back up — repeating until someone solves it for double the point value.
+- **Video/GIF questions**: upload up to 40MB (enough for a few minutes of compressed video). Video automatically pauses the instant someone buzzes in, and resumes for everyone if the host marks the answer wrong and reopens buzzing. Note: this pause/resume behavior only works for actual video files (MP4, WebM, etc.) — browsers don't allow scripts to pause an animated GIF, so if that matters for a specific question, converting the GIF to a short MP4 will look the same and also upload much smaller.
+- **Custom look**: drop `nppardyboard.png` (background), `nakedpoolpardy.png` (title graphic), and `BRLNSB.TTF` (font) into the `public` folder to personalize the board — no code changes needed, they're already wired up.
 
 ## Notes
 

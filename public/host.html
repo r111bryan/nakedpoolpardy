@@ -234,9 +234,10 @@
   <div class="clue-modal">
     <div class="clue-value-tag" id="modalValueTag"></div>
     <img class="clue-media" id="modalImg" style="display:none;">
-    <video class="clue-media" id="modalVideo" style="display:none;" controls></video>
+    <video class="clue-media" id="modalVideo" style="display:none;" controls muted playsinline></video>
     <div class="clue-text" id="modalClue"></div>
     <div class="answer-text" id="modalAnswer"></div>
+    <div class="buzz-status" id="puzzlePoolLine" style="display:none;font-size:0.75rem;color:#a7e8ff;margin-bottom:0;font-family:'Inter',sans-serif;letter-spacing:normal;"></div>
     <div class="buzz-status" id="buzzStatus"></div>
     <div class="modal-actions" id="modalActions"></div>
   </div>
@@ -274,6 +275,16 @@
       </div>
       <div class="media-preview-wrap" id="mediaPreviewWrap"></div>
     </div>
+    <div class="edit-field puzzle-field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="puzzleToggle" style="width:auto;">
+        Make this a Daily Double Ordering Puzzle (drag names into order — solving pays 2× the point value)
+      </label>
+      <div id="puzzleNamesWrap" style="display:none;margin-top:10px;">
+        <label>Names, one per line, in the CORRECT order — this is the secret answer</label>
+        <textarea id="puzzleNamesText" rows="8" placeholder="Sam&#10;Tay&#10;Jess&#10;Robin&#10;..."></textarea>
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="success" id="saveClueBtn">Save</button>
       <button class="danger" id="deleteClueBtn">Delete Question</button>
@@ -308,6 +319,7 @@
 
 <script>
 let S = null;          // latest server state mirror
+let lastMediaKey = null;
 let editMode = false;
 let pendingMedia = undefined;
 let editingClue = null;
@@ -486,7 +498,13 @@ function renderPlayModal() {
   const overlay = document.getElementById('playOverlay');
   const ddOverlay = document.getElementById('ddWagerOverlay');
 
-  if (!S.current) { overlay.classList.remove('active'); ddOverlay.classList.remove('active'); return; }
+  if (!S.current) {
+    overlay.classList.remove('active');
+    ddOverlay.classList.remove('active');
+    document.getElementById('modalVideo').pause();
+    lastMediaKey = null;
+    return;
+  }
 
   const clue = S.board.categories[S.current.catIndex].clues[S.current.clueIndex];
   const catName = S.board.categories[S.current.catIndex].name;
@@ -509,15 +527,27 @@ function renderPlayModal() {
 
   document.getElementById('modalValueTag').textContent = S.current.isDailyDouble
     ? 'DAILY DOUBLE — WAGER $' + S.current.ddWager.wager
-    : catName.toUpperCase() + ' — $' + clue.value;
+    : S.current.isPuzzle
+      ? catName.toUpperCase() + ' — ORDERING PUZZLE (solve for $' + (clue.value * 2) + ')'
+      : catName.toUpperCase() + ' — $' + clue.value;
   document.getElementById('modalClue').textContent = clue.clue;
 
   const imgEl = document.getElementById('modalImg');
   const vidEl = document.getElementById('modalVideo');
-  imgEl.style.display = 'none'; vidEl.style.display = 'none'; vidEl.pause();
-  if (clue.media) {
-    if (clue.media.type === 'video') { vidEl.src = clue.media.dataUrl; vidEl.style.display = 'block'; }
-    else { imgEl.src = clue.media.dataUrl; imgEl.style.display = 'block'; }
+  const mediaKey = S.current.catIndex + '-' + S.current.clueIndex + '-' + (clue.media ? clue.media.dataUrl : '');
+  if (mediaKey !== lastMediaKey) {
+    lastMediaKey = mediaKey;
+    imgEl.style.display = 'none'; vidEl.style.display = 'none'; vidEl.pause(); vidEl.removeAttribute('src'); vidEl.load();
+    if (clue.media) {
+      if (clue.media.type === 'video') { vidEl.src = clue.media.dataUrl; vidEl.style.display = 'block'; }
+      else { imgEl.src = clue.media.dataUrl; imgEl.style.display = 'block'; }
+    }
+  }
+  if (clue.media && clue.media.type === 'video') {
+    // Video follows the buzz lock: playing while open for guessing, paused the instant
+    // someone buzzes in, resuming automatically if the host reopens after a wrong answer.
+    if (S.current.locked) vidEl.pause();
+    else vidEl.play().catch(() => {});
   }
 
   const answerEl = document.getElementById('modalAnswer');
@@ -526,8 +556,48 @@ function renderPlayModal() {
 
   const statusEl = document.getElementById('buzzStatus');
   const actions = document.getElementById('modalActions');
+  const poolLine = document.getElementById('puzzlePoolLine');
   actions.innerHTML = '';
   statusEl.className = 'buzz-status';
+  poolLine.style.display = 'none';
+
+  if (S.current.isPuzzle) {
+    answerEl.classList.remove('shown');
+    poolLine.style.display = 'block';
+    poolLine.textContent = 'Pool: ' + (S.current.puzzlePool || []).join(', ');
+
+    if (S.current.solved) {
+      statusEl.innerHTML = '';
+      statusEl.appendChild(avatarImg(S.current.winner.avatar, 'small'));
+      statusEl.appendChild(document.createTextNode(' 🎉 ' + S.current.winner.playerName + ' solved it! +$' + (clue.value * 2)));
+      statusEl.classList.add('won');
+      actions.appendChild(mkBtn('Continue', 'gold', () => send({ type: 'close_clue' })));
+    } else if (!S.current.buzzingOpen && !S.current.locked && !S.current.attemptResult) {
+      statusEl.textContent = 'Read the clue, then open the buzzers.';
+      statusEl.classList.add('waiting');
+      actions.appendChild(mkBtn('Start Buzzing', 'gold', () => send({ type: 'start_buzzing' })));
+      actions.appendChild(mkBtn('Cancel', 'outline', () => send({ type: 'close_clue' })));
+    } else if (S.current.buzzingOpen && !S.current.locked) {
+      statusEl.textContent = 'Buzzers open — waiting for someone to attempt…';
+      statusEl.classList.add('waiting');
+      actions.appendChild(mkBtn('No One Buzzed / Skip', 'outline', () => send({ type: 'judge', result: 'skip' })));
+    } else if (S.current.locked) {
+      statusEl.innerHTML = '';
+      statusEl.appendChild(avatarImg(S.current.winner.avatar, 'small'));
+      statusEl.appendChild(document.createTextNode(' 🔔 ' + S.current.winner.playerName + ' is arranging their answer…'));
+      statusEl.classList.add('won');
+    } else if (S.current.attemptResult) {
+      statusEl.innerHTML = '';
+      statusEl.appendChild(avatarImg(null, 'small'));
+      statusEl.appendChild(document.createTextNode(
+        S.current.attemptResult.playerName + ' got ' + S.current.attemptResult.correctCount + ' of ' + S.current.attemptResult.total + ' correct.'
+      ));
+      statusEl.classList.add('wrongflag');
+      actions.appendChild(mkBtn('Reopen Buzzing', 'gold', () => send({ type: 'reopen_buzzing' })));
+      actions.appendChild(mkBtn('Give Up / Skip', 'outline', () => send({ type: 'judge', result: 'skip' })));
+    }
+    return;
+  }
 
   if (S.current.isDailyDouble) {
     if (!S.current.answerShown) {
@@ -592,8 +662,15 @@ function openEditClue(catIndex, clueIndex) {
   document.getElementById('editClueText').value = clue.clue;
   document.getElementById('editAnswerText').value = clue.answer;
   renderMediaPreview(clue.media);
+  const hasPuzzle = !!(clue.puzzle && clue.puzzle.names && clue.puzzle.names.length);
+  document.getElementById('puzzleToggle').checked = hasPuzzle;
+  document.getElementById('puzzleNamesWrap').style.display = hasPuzzle ? 'block' : 'none';
+  document.getElementById('puzzleNamesText').value = hasPuzzle ? clue.puzzle.names.join('\n') : '';
   document.getElementById('editOverlay').classList.add('active');
 }
+document.getElementById('puzzleToggle').onchange = (e) => {
+  document.getElementById('puzzleNamesWrap').style.display = e.target.checked ? 'block' : 'none';
+};
 function renderMediaPreview(media) {
   const wrap = document.getElementById('mediaPreviewWrap');
   const removeBtn = document.getElementById('removeMediaBtn');
@@ -613,28 +690,65 @@ document.getElementById('mediaInput').onchange = (e) => {
   const isVideo = file.type.startsWith('video/');
   const isImage = file.type.startsWith('image/');
   if (!isVideo && !isImage) { alert('Please choose an image, GIF, or video file.'); e.target.value = ''; return; }
-  const maxBytes = 8 * 1024 * 1024;
+  const maxBytes = 40 * 1024 * 1024;
   if (file.size > maxBytes) {
-    alert('That file is ' + (file.size / (1024 * 1024)).toFixed(1) + 'MB — please use something under 8MB. Large videos and GIFs often fail to upload; try a shorter clip, a lower resolution, or converting to MP4 (which compresses much better than GIF).');
+    alert('That file is ' + (file.size / (1024 * 1024)).toFixed(1) + 'MB — please use something under 40MB. That\'s roughly enough for a compressed 5-minute clip; try a lower resolution/bitrate, or converting GIF to MP4 (which compresses far better than GIF).');
     e.target.value = '';
     return;
   }
   const wrap = document.getElementById('mediaPreviewWrap');
-  wrap.innerHTML = '<div style="font-size:0.75rem;color:#a7e8ff;">Uploading…</div>';
-  const reader = new FileReader();
-  reader.onload = (evt) => { pendingMedia = { type: isVideo ? 'video' : 'image', dataUrl: evt.target.result }; renderMediaPreview(pendingMedia); };
-  reader.onerror = () => { alert('Could not read that file — please try again or use a different file.'); renderMediaPreview(null); };
-  reader.readAsDataURL(file);
+  wrap.innerHTML = '<div style="font-size:0.75rem;color:#a7e8ff;" id="uploadProgressText">Uploading… 0%</div>';
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/upload-media');
+  xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+  xhr.upload.onprogress = (ev) => {
+    if (ev.lengthComputable) {
+      const pct = Math.round((ev.loaded / ev.total) * 100);
+      const el = document.getElementById('uploadProgressText');
+      if (el) el.textContent = 'Uploading… ' + pct + '%';
+    }
+  };
+  xhr.onload = () => {
+    if (xhr.status !== 200) {
+      alert('Upload failed — please try again or use a different file.');
+      renderMediaPreview(null);
+      return;
+    }
+    try {
+      const data = JSON.parse(xhr.responseText);
+      pendingMedia = { type: isVideo ? 'video' : 'image', dataUrl: '/media/' + data.id };
+      renderMediaPreview(pendingMedia);
+    } catch (err) {
+      alert('Upload failed — please try again.');
+      renderMediaPreview(null);
+    }
+  };
+  xhr.onerror = () => { alert('Upload failed — check your connection and try again.'); renderMediaPreview(null); };
+  xhr.send(file);
   e.target.value = '';
 };
 document.getElementById('removeMediaBtn').onclick = () => { pendingMedia = null; renderMediaPreview(null); };
 document.getElementById('saveClueBtn').onclick = () => {
+  const puzzleOn = document.getElementById('puzzleToggle').checked;
+  let puzzlePayload = null;
+  let forceDD = undefined;
+  if (puzzleOn) {
+    const names = document.getElementById('puzzleNamesText').value.split('\n').map(s => s.trim()).filter(Boolean);
+    if (names.length < 2) {
+      alert('Add at least 2 names (one per line) for the Ordering Puzzle, or uncheck the box.');
+      return;
+    }
+    puzzlePayload = { names };
+    forceDD = true; // checking this box also marks the question as a Daily Double, so it can actually get shuffled into play
+  }
   send({
     type: 'edit_clue', catIndex: editingClue.catIndex, clueIndex: editingClue.clueIndex,
     value: document.getElementById('editValue').value,
     clue: document.getElementById('editClueText').value,
     answer: document.getElementById('editAnswerText').value,
-    media: pendingMedia
+    media: pendingMedia,
+    puzzle: puzzlePayload,
+    dd: forceDD
   });
   closeEditModal();
 };
@@ -667,23 +781,73 @@ document.getElementById('addRowBtn').onclick = () => { send({ type: 'add_row' })
 document.getElementById('resetUsedBtn').onclick = () => send({ type: 'reset_used' });
 document.getElementById('resetScoresBtn').onclick = () => send({ type: 'reset_scores' });
 
-document.getElementById('saveBtn').onclick = () => {
-  const data = JSON.stringify({ board: S.board }, null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'jeopardy-board.json'; a.click();
-  URL.revokeObjectURL(url);
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+function dataUrlToBlob(dataUrl) {
+  const [header, base64] = dataUrl.split(',');
+  const mime = (header.match(/data:(.*?);base64/) || [])[1] || 'application/octet-stream';
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+function uploadBlob(blob) {
+  return fetch('/api/upload-media', { method: 'POST', headers: { 'Content-Type': blob.type || 'application/octet-stream' }, body: blob })
+    .then(r => r.json())
+    .then(data => '/media/' + data.id);
+}
+
+document.getElementById('saveBtn').onclick = async () => {
+  const btn = document.getElementById('saveBtn');
+  const prevLabel = btn.textContent;
+  btn.textContent = 'Preparing…'; btn.disabled = true;
+  try {
+    const boardCopy = JSON.parse(JSON.stringify(S.board));
+    for (const cat of boardCopy.categories) {
+      for (const clue of cat.clues) {
+        if (clue.media && clue.media.dataUrl && clue.media.dataUrl.startsWith('/media/')) {
+          const resp = await fetch(clue.media.dataUrl);
+          const blob = await resp.blob();
+          clue.media.dataUrl = await blobToDataUrl(blob);
+        }
+      }
+    }
+    const data = JSON.stringify({ board: boardCopy }, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'jeopardy-board.json'; a.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Could not prepare the export — please try again.');
+  }
+  btn.textContent = prevLabel; btn.disabled = false;
 };
 document.getElementById('loadBtn').onclick = () => document.getElementById('fileInput').click();
 document.getElementById('fileInput').onchange = (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (evt) => {
+  reader.onload = async (evt) => {
     try {
       const data = JSON.parse(evt.target.result);
-      if (data.board) send({ type: 'import_board', board: data.board });
+      if (data.board) {
+        for (const cat of data.board.categories) {
+          for (const clue of cat.clues) {
+            if (clue.media && clue.media.dataUrl && clue.media.dataUrl.startsWith('data:')) {
+              const blob = dataUrlToBlob(clue.media.dataUrl);
+              clue.media.dataUrl = await uploadBlob(blob);
+            }
+          }
+        }
+        send({ type: 'import_board', board: data.board });
+      }
     } catch (err) { alert('Could not read that file — make sure it is a board exported from this app.'); }
   };
   reader.readAsText(file);

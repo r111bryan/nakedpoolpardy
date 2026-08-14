@@ -10,6 +10,30 @@ const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => res.redirect('/host.html'));
 
+// ---------- Media upload/serve ----------
+// Uploaded clue media (images/GIFs/video) is stored in memory and served over plain HTTP,
+// instead of being embedded as base64 inside WebSocket state broadcasts. This matters a lot
+// for video: the old approach re-sent the entire file on every single state update (every
+// buzz, every score change) for as long as that question stayed open, which made anything
+// beyond a small clip impractical regardless of the size limit.
+const mediaStore = {}; // id -> { mime, buffer }
+const MEDIA_LIMIT = '45mb'; // raw upload cap; client-side UI enforces a slightly lower limit
+
+app.post('/api/upload-media', express.raw({ type: '*/*', limit: MEDIA_LIMIT }), (req, res) => {
+  if (!req.body || !req.body.length) return res.status(400).json({ error: 'Empty upload.' });
+  const id = crypto.randomUUID();
+  mediaStore[id] = { mime: req.headers['content-type'] || 'application/octet-stream', buffer: req.body };
+  res.json({ id });
+});
+
+app.get('/media/:id', (req, res) => {
+  const m = mediaStore[req.params.id];
+  if (!m) return res.status(404).end();
+  res.set('Content-Type', m.mime);
+  res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  res.send(m.buffer);
+});
+
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, maxPayload: 15 * 1024 * 1024 }); // 15MB per message, enough for a compressed image/GIF or short video clip
 
@@ -32,8 +56,17 @@ function getLanIps() {
   return ips;
 }
 
+function shuffleArray(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function sampleBoard() {
-  const mk = (value, clue, answer) => ({ value, clue, answer, used: false, media: null, dd: false });
+  const mk = (value, clue, answer) => ({ value, clue, answer, used: false, media: null, dd: false, puzzle: null });
   return {
     categories: [
       { name: 'Science', clues: [
@@ -135,6 +168,7 @@ function playerStateSnapshot(player) {
     const clue = findClue(state.current.catIndex, state.current.clueIndex);
     currentPublic = {
       isDailyDouble: state.current.isDailyDouble,
+      isPuzzle: !!state.current.isPuzzle,
       buzzingOpen: state.current.buzzingOpen,
       locked: state.current.locked,
       winner: state.current.winner,
@@ -144,7 +178,10 @@ function playerStateSnapshot(player) {
       catName: state.board.categories[state.current.catIndex] ? state.board.categories[state.current.catIndex].name : '',
       clueText: clue ? clue.clue : '',
       media: clue ? clue.media : null,
-      excludedPlayerIds: state.current.excludedPlayerIds || []
+      excludedPlayerIds: state.current.excludedPlayerIds || [],
+      puzzlePool: state.current.puzzlePool || null,
+      attemptResult: state.current.attemptResult || null,
+      solved: !!state.current.solved
     };
   }
   return {
@@ -252,6 +289,40 @@ wss.on('connection', (ws) => {
       return;
     }
 
+    if (msg.type === 'submit_puzzle_guess') {
+      const p = players[ws.playerId];
+      if (!p || !state.current || !state.current.isPuzzle || state.current.solved) return;
+      if (!state.current.locked || !state.current.winner || state.current.winner.playerId !== p.id) return;
+      const guess = Array.isArray(msg.guessOrder) ? msg.guessOrder : [];
+      const correct = state.current.correctOrder;
+      if (guess.length !== correct.length) return;
+      let correctCount = 0;
+      for (let i = 0; i < correct.length; i++) {
+        if (guess[i] === correct[i]) correctCount++;
+      }
+      const clue = findClue(state.current.catIndex, state.current.clueIndex);
+      state.current.attemptResult = { playerId: p.id, playerName: p.name, correctCount, total: correct.length };
+
+      if (correctCount === correct.length) {
+        p.score += clue.value * 2;
+        clue.used = true;
+        state.current.solved = true;
+        state.current.locked = false;
+        state.current.buzzingOpen = false;
+      } else {
+        state.current.excludedPlayerIds.push(p.id);
+        // once everyone currently in the game has had a turn without solving it, give everyone a fresh cycle
+        const allIds = Object.values(players).map((pl) => pl.id);
+        const allExcluded = allIds.length > 0 && allIds.every((id) => state.current.excludedPlayerIds.includes(id));
+        if (allExcluded) state.current.excludedPlayerIds = [];
+        state.current.locked = false;
+        state.current.winner = null;
+        state.current.buzzingOpen = false;
+      }
+      broadcastAll();
+      return;
+    }
+
     // --- everything below is host-only ---
     if (ws.role !== 'host') return;
 
@@ -302,7 +373,7 @@ wss.on('connection', (ws) => {
     if (msg.type === 'add_category') {
       const rowCount = Math.max(...state.board.categories.map((c) => c.clues.length), 5);
       const clues = [];
-      for (let i = 0; i < rowCount; i++) clues.push({ value: (i + 1) * 100, clue: 'New question', answer: 'What is the answer?', used: false, media: null, dd: false });
+      for (let i = 0; i < rowCount; i++) clues.push({ value: (i + 1) * 100, clue: 'New question', answer: 'What is the answer?', used: false, media: null, dd: false, puzzle: null });
       state.board.categories.push({ name: 'New Category', clues });
       state.activeDailyDoubles = [];
       broadcastAll();
@@ -311,7 +382,7 @@ wss.on('connection', (ws) => {
     if (msg.type === 'add_row') {
       const rowCount = Math.max(...state.board.categories.map((c) => c.clues.length), 0);
       const nextValue = (rowCount + 1) * 100;
-      state.board.categories.forEach((cat) => cat.clues.push({ value: nextValue, clue: 'New question', answer: 'What is the answer?', used: false, media: null, dd: false }));
+      state.board.categories.forEach((cat) => cat.clues.push({ value: nextValue, clue: 'New question', answer: 'What is the answer?', used: false, media: null, dd: false, puzzle: null }));
       state.activeDailyDoubles = [];
       broadcastAll();
       return;
@@ -323,6 +394,8 @@ wss.on('connection', (ws) => {
         if (msg.clue !== undefined) clue.clue = msg.clue;
         if (msg.answer !== undefined) clue.answer = msg.answer;
         if (msg.media !== undefined) clue.media = msg.media;
+        if (msg.puzzle !== undefined) clue.puzzle = msg.puzzle; // null, or { names: [correct order] }
+        if (msg.dd !== undefined) clue.dd = !!msg.dd; // checking "Ordering Puzzle" in the editor also marks the question as a Daily Double
       }
       broadcastAll();
       return;
@@ -376,6 +449,7 @@ wss.on('connection', (ws) => {
           if (c.media === undefined) c.media = null;
           if (c.dd === undefined) c.dd = false;
           if (c.used === undefined) c.used = false;
+          if (c.puzzle === undefined) c.puzzle = null;
         }));
         state.board = msg.board;
       }
@@ -390,16 +464,25 @@ wss.on('connection', (ws) => {
       if (!clue || clue.used) return;
       const key = msg.catIndex + '-' + msg.clueIndex;
       const isDD = state.activeDailyDoubles.includes(key);
+      // A question only plays as the Ordering Puzzle when it's the actual (secretly shuffled) Daily Double
+      // for this game AND has puzzle names configured. A DD marked ✓ with no names just plays as a normal wager.
+      const isPuzzle = isDD && !!(clue.puzzle && Array.isArray(clue.puzzle.names) && clue.puzzle.names.length >= 2);
       state.current = {
         catIndex: msg.catIndex,
         clueIndex: msg.clueIndex,
-        isDailyDouble: isDD,
+        isDailyDouble: isDD && !isPuzzle,
+        isPuzzle,
         buzzingOpen: false,
         locked: false,
         winner: null,
         answerShown: false,
         excludedPlayerIds: [],
-        ddWager: null
+        ddWager: null,
+        // Ordering Puzzle fields (only meaningful when isPuzzle is true)
+        puzzlePool: isPuzzle ? shuffleArray(clue.puzzle.names) : null,
+        correctOrder: isPuzzle ? clue.puzzle.names.slice() : null, // server-side only; never sent to players
+        attemptResult: null,
+        solved: false
       };
       broadcastAll();
       return;
