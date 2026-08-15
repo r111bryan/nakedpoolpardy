@@ -35,9 +35,11 @@ Railway (railway.app) and Fly.io (fly.io) are similar alternatives if you want o
 
 ## Playing
 
-- **Edit Mode** (top-right wrench icon, host screen only) lets you rename categories, edit questions and answers, and upload an image/GIF/video per question — all before or between rounds.
+- **Edit Mode** (top-right wrench icon, host screen only) lets you rename categories, edit questions and answers, upload an image/GIF/video per question, and set up Daily Doubles — all before or between rounds.
 - Players compete individually — there are no teams. Everyone who joins can buzz on every question.
 - Click a question to open it, read it aloud, then click **Start Buzzing** to unlock players' phones. The first buzz locks everyone else out instantly. Judge Correct/Wrong — a wrong answer excludes that player and lets you reopen buzzing for everyone else.
+- **Daily Double**: mark questions with a ✓ in the Daily Double panel, then Shuffle to secretly place one (or more). No buzzing needed — you just pick the wagering player and amount.
+- **Ordering Puzzle minigame**: in the Daily Double panel, turn on marking mode and click a question to mark it ✓ — the editor pops open right there so you can type the names, one per line, in the CORRECT order. Fill it in and that Daily Double automatically plays as the puzzle instead of a wager (leave it blank and it's just a normal Daily Double). During play, buzzing in gets a player a chance to drag those names into order; everyone sees how many they got in the exact right spot (but not which ones), so it doubles as a clue for the next attempt. A wrong guess locks that player out until everyone still in the game has had a turn, then it opens back up — repeating until someone solves it for double the point value.
 - **Video/GIF questions**: upload up to 40MB (enough for a few minutes of compressed video). Video automatically pauses the instant someone buzzes in, and resumes for everyone if the host marks the answer wrong and reopens buzzing. Note: this pause/resume behavior only works for actual video files (MP4, WebM, etc.) — browsers don't allow scripts to pause an animated GIF, so if that matters for a specific question, converting the GIF to a short MP4 will look the same and also upload much smaller.
 - **Custom look**: drop `nppardyboard.png` (background), `nakedpoolpardy.png` (title graphic), and `BRLNSB.TTF` (font) into the `public` folder to personalize the board — no code changes needed, they're already wired up.
 

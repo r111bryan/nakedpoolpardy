@@ -56,10 +56,13 @@
   .avatar.big{ width:64px; height:64px; border-width:2px; }
   input[type=file]{ display:none; }
 
+  /* JOIN screen */
   .avatar-row{ display:flex; align-items:center; justify-content:center; gap:12px; }
 
+  /* GAME screen (no join/team steps once in) */
   .game-screen{ flex:1; display:flex; flex-direction:column; gap:16px; max-width:1100px; margin:0 auto; width:100%; padding-bottom:10px; }
 
+  /* Live board — same visual style as the host screen's board */
   .board-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
   table.board{ width:100%; border-collapse:separate; border-spacing:6px; table-layout:fixed; margin:0 auto; }
   .cat-cell{
@@ -74,6 +77,7 @@
   }
   .clue-cell.used{ color:#1477b0; background:#013256; }
 
+  /* Clue view — same styling family as the host's clue modal */
   .clue-view{ background:#024a7a; border:2px solid var(--gold); border-radius:16px; padding:24px; box-shadow:0 0 40px rgba(255,214,10,0.1); }
   .clue-cat-tag{ font-family:'PartyFont','Anton',sans-serif; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:14px; text-align:center; }
   .clue-media-p{ max-width:100%; max-height:220px; border-radius:8px; margin:0 auto 14px; display:block; border:1px solid #0577b8; }
@@ -101,6 +105,35 @@
     box-shadow:0 10px 0 #145c33;
   }
 
+  /* Ordering Puzzle builder */
+  .puzzle-builder{ display:none; flex-direction:column; gap:14px; }
+  .puzzle-builder.shown{ display:flex; }
+  .puzzle-label{ font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:#a7e8ff; text-align:center; }
+  .puzzle-bank{
+    display:flex; flex-wrap:wrap; gap:8px; justify-content:center; min-height:44px;
+    background:#013a63; border:1px dashed #0577b8; border-radius:10px; padding:10px;
+  }
+  .puzzle-chip{
+    background:#0466c8; border:1px solid #045c9c; border-radius:20px; padding:9px 16px;
+    font-weight:700; font-size:0.85rem; color:var(--white); cursor:grab; touch-action:none; user-select:none;
+  }
+  .puzzle-chip.ghost{ position:fixed; pointer-events:none; z-index:200; opacity:0.9; box-shadow:0 6px 16px rgba(0,0,0,0.4); }
+  .puzzle-slots{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .puzzle-slot{
+    width:110px; min-height:46px; background:#012e52; border:2px dashed #1f8fd1; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; position:relative; padding:4px;
+  }
+  .puzzle-slot .slot-num{ position:absolute; top:2px; left:6px; font-size:0.6rem; color:#4fb3d9; }
+  .puzzle-slot .puzzle-chip{ cursor:grab; }
+  .puzzle-actions{ display:flex; gap:10px; justify-content:center; }
+  .puzzle-actions button{ padding:12px 20px; font-size:0.85rem; }
+  .puzzle-result-banner{
+    text-align:center; font-family:'PartyFont','Anton',sans-serif; font-size:1.1rem; padding:10px; border-radius:10px;
+  }
+  .puzzle-result-banner.solved{ background:rgba(6,214,160,0.15); color:var(--success); border:1px solid var(--success); }
+  .puzzle-result-banner.attempt{ background:rgba(255,77,109,0.12); color:#ffb3c1; border:1px solid var(--danger); }
+
+  /* Leaderboard at bottom */
   .leaderboard{ display:flex; flex-direction:column; gap:8px; }
   .leaderboard-label{ font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:#a7e8ff; text-align:center; }
   .leader-row{
@@ -153,6 +186,19 @@
     <div class="clue-text-p" id="clueTextP"></div>
   </div>
 
+  <div class="puzzle-result-banner" id="puzzleResultBanner" style="display:none;"></div>
+
+  <div class="puzzle-builder" id="puzzleBuilder">
+    <div class="puzzle-label">Drag names into order</div>
+    <div class="puzzle-bank" id="puzzleBank"></div>
+    <div class="puzzle-label">Your order</div>
+    <div class="puzzle-slots" id="puzzleSlots"></div>
+    <div class="puzzle-actions">
+      <button class="outline small" id="puzzleClearBtn">Clear</button>
+      <button class="gold" id="puzzleSubmitBtn" disabled>Submit Order</button>
+    </div>
+  </div>
+
   <div class="turn-note" id="turnNote"></div>
 
   <div class="buzzer-wrap" id="buzzerWrap"><button class="buzzer-btn" id="buzzerBtn" disabled>WAIT</button></div>
@@ -170,7 +216,6 @@ let ws = null;
 let playerId = sessionStorage.getItem('jeopardy_player_id') || null;
 let S = null;
 let pendingAvatarDataUrl = null;
-let lastMediaKey = null;
 
 function resizeImageFile(file, maxSize) {
   return new Promise((resolve, reject) => {
@@ -227,7 +272,7 @@ connect();
 function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
 function showScreen(id) {
   ['joinScreen', 'gameScreen'].forEach(s => {
-    document.getElementById(s).style.display = (s === id) ? 'flex' : 'none';
+    document.getElementById(s).style.display = (s === id) ? (s === 'gameScreen' ? 'flex' : 'flex') : 'none';
   });
 }
 
@@ -262,6 +307,11 @@ function blankAvatar() {
   return 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="%230577b8"/></svg>');
 }
 
+let puzzleSlots = [];
+let puzzleBank = [];
+let wasMyPuzzleTurn = false;
+let lastMediaKey = null;
+
 function render() {
   if (!S || !S.you) return;
   showScreen('gameScreen');
@@ -269,26 +319,33 @@ function render() {
   const liveBoardWrap = document.getElementById('liveBoardWrap');
   const clueView = document.getElementById('clueView');
   const buzzerWrap = document.getElementById('buzzerWrap');
+  const puzzleBuilder = document.getElementById('puzzleBuilder');
+  const resultBanner = document.getElementById('puzzleResultBanner');
   const note = document.getElementById('turnNote');
 
   if (!S.current) {
     liveBoardWrap.style.display = 'block';
     clueView.style.display = 'none';
     buzzerWrap.classList.remove('shown');
+    puzzleBuilder.classList.remove('shown');
+    resultBanner.style.display = 'none';
     note.style.display = 'none';
+    wasMyPuzzleTurn = false;
     lastMediaKey = null;
     document.getElementById('clueVideo').pause();
     renderLiveBoard();
-    renderLeaderboard();
     return;
   }
 
   liveBoardWrap.style.display = 'none';
   clueView.style.display = 'block';
   note.style.display = 'block';
-  document.getElementById('clueCatTag').textContent = S.current.catName.toUpperCase() + ' — $' + S.current.value;
+  document.getElementById('clueCatTag').textContent = S.current.isDailyDouble
+    ? 'DAILY DOUBLE — ' + S.current.catName.toUpperCase()
+    : S.current.isPuzzle
+      ? S.current.catName.toUpperCase() + ' — ORDERING PUZZLE (solve for $' + (S.current.value * 2) + ')'
+      : S.current.catName.toUpperCase() + ' — $' + S.current.value;
   document.getElementById('clueTextP').textContent = S.current.clueText || '';
-
   const img = document.getElementById('clueImg');
   const vid = document.getElementById('clueVideo');
   const mediaKey = S.current.catName + '-' + S.current.clueText + '-' + (S.current.media ? S.current.media.dataUrl : '');
@@ -301,15 +358,78 @@ function render() {
     }
   }
   if (S.current.media && S.current.media.type === 'video') {
+    // Video follows the buzz lock: playing while open for guessing, paused the instant
+    // someone buzzes in, resuming automatically if the host reopens after a wrong answer.
     if (S.current.locked) vid.pause();
     else vid.play().catch(() => {});
   }
 
   const btn = document.getElementById('buzzerBtn');
   btn.classList.remove('won');
+
+  if (S.current.isPuzzle) {
+    const isMyTurn = S.current.locked && S.current.winner && S.current.winner.playerId === S.you.id && !S.current.solved;
+
+    resultBanner.style.display = 'none';
+    if (S.current.solved) {
+      resultBanner.style.display = 'block';
+      resultBanner.className = 'puzzle-result-banner solved';
+      resultBanner.textContent = '🎉 ' + S.current.winner.playerName + ' solved it! +$' + (S.current.value * 2);
+    } else if (S.current.attemptResult) {
+      resultBanner.style.display = 'block';
+      resultBanner.className = 'puzzle-result-banner attempt';
+      resultBanner.textContent = S.current.attemptResult.playerName + ' got ' + S.current.attemptResult.correctCount + ' of ' + S.current.attemptResult.total + ' correct';
+    }
+
+    if (isMyTurn) {
+      buzzerWrap.classList.remove('shown');
+      puzzleBuilder.classList.add('shown');
+      note.style.display = 'none';
+      if (!wasMyPuzzleTurn) {
+        puzzleBank = (S.current.puzzlePool || []).slice();
+        puzzleSlots = new Array(puzzleBank.length).fill(null);
+        renderPuzzleBuilder();
+      }
+    } else {
+      puzzleBuilder.classList.remove('shown');
+      note.style.display = 'block';
+      if (S.current.solved) {
+        btn.disabled = true; btn.textContent = 'WAIT';
+        buzzerWrap.classList.remove('shown');
+        note.style.display = 'none';
+      } else if (S.current.locked) {
+        btn.disabled = true; btn.textContent = 'WAIT';
+        buzzerWrap.classList.add('shown');
+        note.innerHTML = '<b>' + S.current.winner.playerName + '</b> is arranging their answer…';
+      } else if (S.current.buzzingOpen) {
+        buzzerWrap.classList.add('shown');
+        if (S.buzzEnabled) {
+          btn.disabled = false; btn.textContent = 'BUZZ IN';
+          note.innerHTML = 'Buzz to take a shot at the order!';
+        } else {
+          btn.disabled = true; btn.textContent = 'OUT';
+          note.innerHTML = 'You already tried this puzzle — wait for the next round.';
+        }
+      } else {
+        buzzerWrap.classList.add('shown');
+        btn.disabled = true; btn.textContent = 'WAIT';
+        note.innerHTML = 'Get ready — buzzers will open soon.';
+      }
+    }
+    wasMyPuzzleTurn = isMyTurn;
+    renderLeaderboard();
+    return;
+  }
+
+  wasMyPuzzleTurn = false;
+  puzzleBuilder.classList.remove('shown');
+  resultBanner.style.display = 'none';
   buzzerWrap.classList.add('shown');
 
-  if (S.current.locked) {
+  if (S.current.isDailyDouble) {
+    btn.disabled = true; btn.textContent = 'WAIT';
+    note.innerHTML = '⭐ Daily Double in progress — no buzzing needed.';
+  } else if (S.current.locked) {
     if (S.current.winner && S.current.winner.playerId === S.you.id) {
       btn.disabled = true; btn.textContent = 'GOT IT!'; btn.classList.add('won');
       note.innerHTML = 'You buzzed in first!';
@@ -332,6 +452,109 @@ function render() {
 
   renderLeaderboard();
 }
+
+// ---------- Ordering Puzzle builder (drag and drop) ----------
+function renderPuzzleBuilder() {
+  const bankEl = document.getElementById('puzzleBank');
+  const slotsEl = document.getElementById('puzzleSlots');
+  bankEl.innerHTML = '';
+  slotsEl.innerHTML = '';
+
+  puzzleBank.forEach((name) => {
+    bankEl.appendChild(makePuzzleChip(name, 'bank'));
+  });
+
+  puzzleSlots.forEach((name, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'puzzle-slot';
+    slot.dataset.index = i;
+    const num = document.createElement('div');
+    num.className = 'slot-num';
+    num.textContent = i + 1;
+    slot.appendChild(num);
+    if (name) slot.appendChild(makePuzzleChip(name, i));
+    slotsEl.appendChild(slot);
+  });
+
+  document.getElementById('puzzleSubmitBtn').disabled = puzzleSlots.some((s) => s === null);
+}
+
+function makePuzzleChip(name, source) {
+  const chip = document.createElement('div');
+  chip.className = 'puzzle-chip';
+  chip.textContent = name;
+  chip.addEventListener('pointerdown', (e) => startPuzzleDrag(e, chip, name, source));
+  return chip;
+}
+
+function startPuzzleDrag(e, chipEl, name, source) {
+  e.preventDefault();
+  const ghost = chipEl.cloneNode(true);
+  ghost.classList.add('ghost');
+  const rect = chipEl.getBoundingClientRect();
+  const offsetX = e.clientX - rect.left;
+  const offsetY = e.clientY - rect.top;
+  ghost.style.width = rect.width + 'px';
+  ghost.style.left = (e.clientX - offsetX) + 'px';
+  ghost.style.top = (e.clientY - offsetY) + 'px';
+  document.body.appendChild(ghost);
+  chipEl.style.opacity = '0.25';
+
+  function onMove(ev) {
+    ghost.style.left = (ev.clientX - offsetX) + 'px';
+    ghost.style.top = (ev.clientY - offsetY) + 'px';
+  }
+  function onUp(ev) {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    ghost.remove();
+    chipEl.style.opacity = '1';
+    const dropEl = document.elementFromPoint(ev.clientX, ev.clientY);
+    const slotEl = dropEl && dropEl.closest('.puzzle-slot');
+    const bankEl = dropEl && dropEl.closest('.puzzle-bank');
+    if (slotEl) {
+      placePuzzleChip(name, source, Number(slotEl.dataset.index));
+    } else if (bankEl) {
+      returnPuzzleChipToBank(name, source);
+    }
+    renderPuzzleBuilder();
+  }
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+}
+
+function placePuzzleChip(name, source, targetIndex) {
+  if (source === targetIndex) return;
+  const displaced = puzzleSlots[targetIndex];
+  if (source === 'bank') {
+    puzzleBank.splice(puzzleBank.indexOf(name), 1);
+  } else {
+    puzzleSlots[source] = null;
+  }
+  puzzleSlots[targetIndex] = name;
+  if (displaced !== null && displaced !== undefined) {
+    if (source === 'bank') puzzleBank.push(displaced);
+    else puzzleSlots[source] = displaced;
+  }
+}
+
+function returnPuzzleChipToBank(name, source) {
+  if (source === 'bank') return;
+  puzzleSlots[source] = null;
+  puzzleBank.push(name);
+}
+
+document.getElementById('puzzleClearBtn').onclick = () => {
+  puzzleBank = puzzleBank.concat(puzzleSlots.filter(Boolean));
+  puzzleSlots = new Array(puzzleSlots.length).fill(null);
+  renderPuzzleBuilder();
+};
+
+document.getElementById('puzzleSubmitBtn').onclick = () => {
+  if (puzzleSlots.some((s) => s === null)) return;
+  send({ type: 'submit_puzzle_guess', guessOrder: puzzleSlots.slice() });
+  document.getElementById('puzzleSubmitBtn').disabled = true;
+};
 
 function renderLiveBoard() {
   const table = document.getElementById('miniBoardTable');

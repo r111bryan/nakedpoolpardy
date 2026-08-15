@@ -43,7 +43,10 @@
   .lobby-urls{ font-size:0.8rem; color:#d6f7ff; text-align:left; }
   .lobby-urls div{ margin:2px 0; }
   .lobby-urls b{ color:var(--white); }
-  .host-controls-corner{ position:fixed; top:16px; right:16px; z-index:60; display:flex; gap:8px; }
+  #lockLobbyBtn.locked{ background:var(--danger); color:#fff; border-color:var(--danger); }
+  .host-controls-corner{
+    position:fixed; top:16px; right:16px; z-index:60; display:flex; gap:8px;
+  }
   .icon-btn{
     width:46px; height:46px; border-radius:50%; padding:0; font-size:1.3rem; line-height:1;
     display:flex; align-items:center; justify-content:center;
@@ -63,6 +66,8 @@
     border-radius:8px; padding:8px 14px; font-size:0.75rem; letter-spacing:0.5px; text-transform:uppercase;
   }
   .edit-banner.active{ display:block; }
+  .marking-banner{ background:rgba(255,214,10,0.18); cursor:pointer; }
+  .marking-banner:hover{ background:rgba(255,214,10,0.28); }
 
   .toolbar{ max-width:1100px; margin:0 auto 24px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
   button{
@@ -73,6 +78,7 @@
   button:hover{ transform:translateY(-2px); filter:brightness(1.05); }
   button:active{ transform:translateY(0); }
   button.gold{ background:var(--gold); }
+  button.gold.on{ background:var(--success); color:#04321a; }
   button.outline{ background:transparent; color:var(--white); border:1.5px solid #0577b8; }
   button.outline:hover{ border-color:var(--gold); }
   button.danger{ background:var(--danger); color:#fff; }
@@ -105,6 +111,10 @@
   .clue-cell.editing{ border:1px dashed var(--gold-dim); }
   .clue-cell.used:not(.editing){ color:#1477b0; cursor:default; background:#013256; }
   .clue-cell .media-dot{ position:absolute; bottom:6px; right:8px; font-size:0.55rem; color:#8fd8f0; }
+  .dd-badge{
+    position:absolute; top:5px; left:7px; width:18px; height:18px; border-radius:50%; background:var(--gold);
+    color:var(--navy-deep); font-size:0.7rem; font-weight:800; line-height:18px; text-align:center;
+  }
 
   .avatar{
     width:24px; height:24px; border-radius:50%; object-fit:cover; border:1.5px solid var(--gold);
@@ -155,17 +165,26 @@
   .buzz-status.won{ color:var(--success); }
   .buzz-status.wrongflag{ color:var(--danger); }
   .buzz-status.waiting{ color:#8fd8f0; }
+  .dd-tag{ color:var(--gold); font-family:'PartyFont','Anton',sans-serif; font-size:1.6rem; letter-spacing:2px; margin-bottom:14px; text-shadow:0 0 20px rgba(255,214,10,0.5); }
   .modal-actions{ display:flex; gap:10px; justify-content:center; margin-top:8px; flex-wrap:wrap; }
 
   .edit-field{ text-align:left; margin-bottom:14px; }
   .edit-field label{ display:block; font-size:0.65rem; letter-spacing:1px; text-transform:uppercase; color:#8fd8f0; margin-bottom:5px; }
-  .edit-field textarea, .edit-field input[type=number]{
+  .edit-field textarea, .edit-field input[type=number], .edit-field select{
     width:100%; background:#012e52; border:1px solid #1f8fd1; border-radius:6px; color:var(--white);
     font-family:'Inter',sans-serif; font-size:0.85rem; padding:8px; resize:vertical;
   }
   .media-upload-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
   .media-preview-wrap{ margin-top:10px; }
   .media-preview-wrap img, .media-preview-wrap video{ max-width:100%; max-height:200px; border-radius:8px; border:1px solid #0577b8; }
+
+  .dd-setup-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; background:#024a7a;
+    border:1px solid #0577b8; border-radius:8px; padding:10px 14px; margin-bottom:12px; text-align:left;
+  }
+  .dd-setup-row label{ font-size:0.75rem; color:#d6f7ff; }
+  .dd-setup-row input[type=number]{ width:60px; background:#012e52; border:1px solid #1f8fd1; border-radius:6px; color:var(--white); padding:6px; text-align:center; }
+  .dd-stat{ font-size:0.7rem; color:#8fd8f0; letter-spacing:0.5px; }
 
   input[type=file]{ display:none; }
   footer{ text-align:center; color:#2f8fc4; font-size:0.7rem; margin-top:40px; letter-spacing:0.5px; }
@@ -188,6 +207,7 @@
 </div>
 
 <div class="edit-banner" id="editBanner">Edit Mode — click any category or question to change it</div>
+<div class="edit-banner marking-banner" id="markingBanner">Marking Daily Doubles — click any question on the board to toggle ✓ — click here when done</div>
 
 <div class="toolbar">
   <span id="editOnlyButtons" style="display:none;gap:10px;flex-wrap:wrap;">
@@ -195,6 +215,7 @@
     <button class="outline" id="addRowBtn">+ Row</button>
     <button class="outline" id="resetUsedBtn">Reset Clues</button>
     <button class="outline" id="resetScoresBtn">Reset Scores</button>
+    <button class="outline" id="ddSetupBtn">Daily Double</button>
     <button class="outline" id="saveBtn">Export Board (.json)</button>
     <button class="outline" id="loadBtn">Import Board</button>
   </span>
@@ -216,8 +237,25 @@
     <video class="clue-media" id="modalVideo" style="display:none;" controls muted playsinline></video>
     <div class="clue-text" id="modalClue"></div>
     <div class="answer-text" id="modalAnswer"></div>
+    <div class="buzz-status" id="puzzlePoolLine" style="display:none;font-size:0.75rem;color:#a7e8ff;margin-bottom:0;font-family:'Inter',sans-serif;letter-spacing:normal;"></div>
     <div class="buzz-status" id="buzzStatus"></div>
     <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<!-- DAILY DOUBLE WAGER modal -->
+<div class="overlay" id="ddWagerOverlay">
+  <div class="clue-modal">
+    <div class="dd-tag">DAILY DOUBLE!</div>
+    <div class="edit-field">
+      <label>Which player is wagering?</label>
+      <select id="wagerPlayerSelect"></select>
+    </div>
+    <div class="edit-field">
+      <label>Wager amount</label>
+      <input type="number" id="wagerAmountInput" min="0">
+    </div>
+    <div class="modal-actions"><button class="gold" id="revealDdBtn">Reveal Clue</button></div>
   </div>
 </div>
 
@@ -229,7 +267,7 @@
     <div class="edit-field"><label>Question / clue</label><textarea id="editClueText" rows="3"></textarea></div>
     <div class="edit-field"><label>Answer</label><textarea id="editAnswerText" rows="2"></textarea></div>
     <div class="edit-field">
-      <label>Image, GIF, or video (optional, under 40MB)</label>
+      <label>Image, GIF, or video (optional, under 8MB)</label>
       <div class="media-upload-row">
         <button class="outline small" id="uploadMediaBtn">Upload file</button>
         <button class="danger small" id="removeMediaBtn" style="display:none;">Remove media</button>
@@ -237,11 +275,43 @@
       </div>
       <div class="media-preview-wrap" id="mediaPreviewWrap"></div>
     </div>
+    <div class="edit-field puzzle-field" id="puzzleFieldWrap" style="display:none;">
+      <label>This question is marked as a Daily Double ✓ — it plays as an Ordering Puzzle: solving pays 2× the point value; a wrong guess locks that player out until everyone's had a turn.</label>
+      <label style="margin-top:10px;">Names, one per line, in the CORRECT order — this is the secret answer</label>
+      <textarea id="puzzleNamesText" rows="8" placeholder="Sam&#10;Tay&#10;Jess&#10;Robin&#10;..."></textarea>
+    </div>
+    <div class="edit-field" id="puzzleHintWrap" style="display:none;">
+      <label style="color:#8fd8f0;">Mark this question with ✓ in the Daily Double panel to turn it into an Ordering Puzzle.</label>
+    </div>
     <div class="modal-actions">
       <button class="success" id="saveClueBtn">Save</button>
       <button class="danger" id="deleteClueBtn">Delete Question</button>
       <button class="outline" id="closeEditBtn">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- DAILY DOUBLE SETUP modal -->
+<div class="overlay" id="ddSetupOverlay">
+  <div class="clue-modal">
+    <div class="clue-value-tag">Daily Double Setup</div>
+    <p style="font-size:0.8rem;color:#d6f7ff;text-align:left;margin-bottom:16px;">
+      Turn on marking mode, then click any question on the board to mark it eligible with a ✓.
+      A Daily Double gets secretly placed on one of the marked questions when you shuffle.
+    </p>
+    <div class="dd-setup-row">
+      <label>Marking mode — click board questions to toggle ✓</label>
+      <button class="outline small" id="toggleMarkingBtn">Turn On</button>
+    </div>
+    <div class="dd-setup-row">
+      <label>Number of Daily Doubles</label>
+      <input type="number" id="ddCountInput" min="1" value="1">
+    </div>
+    <div class="dd-setup-row">
+      <span class="dd-stat" id="ddStats">0 questions marked · 0 placed</span>
+      <button class="gold small" id="shuffleDdBtn">Shuffle Daily Doubles</button>
+    </div>
+    <div class="modal-actions"><button class="outline" id="closeDdSetupBtn">Done</button></div>
   </div>
 </div>
 
@@ -342,6 +412,7 @@ function renderBoard() {
       const td = document.createElement('td');
       if (!clue) { tr.appendChild(td); return; }
 
+      const marking = editMode && S.markingDailyDoubles;
       td.className = 'clue-cell' + (editMode ? ' editing' : (clue.used ? ' used' : ''));
       if (editMode) {
         td.innerHTML = '<div>$' + clue.value + '</div>';
@@ -351,7 +422,19 @@ function renderBoard() {
           dot.textContent = clue.media.type === 'video' ? '▶ media' : '🖼 media';
           td.appendChild(dot);
         }
-        td.onclick = () => openEditClue(ci, r);
+        if (clue.dd) {
+          const badge = document.createElement('div');
+          badge.className = 'dd-badge';
+          badge.textContent = '✓';
+          td.appendChild(badge);
+        }
+        td.onclick = marking
+          ? () => {
+              const willMark = !clue.dd;
+              send({ type: 'toggle_dd_mark', catIndex: ci, clueIndex: r });
+              if (willMark) openEditClue(ci, r, true); // just marked it — jump straight to entering the puzzle names
+            }
+          : () => openEditClue(ci, r);
       } else {
         td.textContent = clue.used ? '' : ('$' + clue.value);
         if (!clue.used) td.onclick = () => send({ type: 'open_clue', catIndex: ci, clueIndex: r });
@@ -415,9 +498,11 @@ function renderPlayers() {
 // ---------- Play / Buzz modal ----------
 function renderPlayModal() {
   const overlay = document.getElementById('playOverlay');
+  const ddOverlay = document.getElementById('ddWagerOverlay');
 
   if (!S.current) {
     overlay.classList.remove('active');
+    ddOverlay.classList.remove('active');
     document.getElementById('modalVideo').pause();
     lastMediaKey = null;
     return;
@@ -426,9 +511,27 @@ function renderPlayModal() {
   const clue = S.board.categories[S.current.catIndex].clues[S.current.clueIndex];
   const catName = S.board.categories[S.current.catIndex].name;
 
+  if (S.current.isDailyDouble && !S.current.ddWager) {
+    overlay.classList.remove('active');
+    const select = document.getElementById('wagerPlayerSelect');
+    select.innerHTML = '';
+    S.players.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.name;
+      select.appendChild(opt);
+    });
+    document.getElementById('wagerAmountInput').value = clue.value;
+    ddOverlay.classList.add('active');
+    return;
+  }
+  ddOverlay.classList.remove('active');
   overlay.classList.add('active');
 
-  document.getElementById('modalValueTag').textContent = catName.toUpperCase() + ' — $' + clue.value;
+  document.getElementById('modalValueTag').textContent = S.current.isDailyDouble
+    ? 'DAILY DOUBLE — WAGER $' + S.current.ddWager.wager
+    : S.current.isPuzzle
+      ? catName.toUpperCase() + ' — ORDERING PUZZLE (solve for $' + (clue.value * 2) + ')'
+      : catName.toUpperCase() + ' — $' + clue.value;
   document.getElementById('modalClue').textContent = clue.clue;
 
   const imgEl = document.getElementById('modalImg');
@@ -443,6 +546,8 @@ function renderPlayModal() {
     }
   }
   if (clue.media && clue.media.type === 'video') {
+    // Video follows the buzz lock: playing while open for guessing, paused the instant
+    // someone buzzes in, resuming automatically if the host reopens after a wrong answer.
     if (S.current.locked) vidEl.pause();
     else vidEl.play().catch(() => {});
   }
@@ -453,8 +558,60 @@ function renderPlayModal() {
 
   const statusEl = document.getElementById('buzzStatus');
   const actions = document.getElementById('modalActions');
+  const poolLine = document.getElementById('puzzlePoolLine');
   actions.innerHTML = '';
   statusEl.className = 'buzz-status';
+  poolLine.style.display = 'none';
+
+  if (S.current.isPuzzle) {
+    answerEl.classList.remove('shown');
+    poolLine.style.display = 'block';
+    poolLine.textContent = 'Pool: ' + (S.current.puzzlePool || []).join(', ');
+
+    if (S.current.solved) {
+      statusEl.innerHTML = '';
+      statusEl.appendChild(avatarImg(S.current.winner.avatar, 'small'));
+      statusEl.appendChild(document.createTextNode(' 🎉 ' + S.current.winner.playerName + ' solved it! +$' + (clue.value * 2)));
+      statusEl.classList.add('won');
+      actions.appendChild(mkBtn('Continue', 'gold', () => send({ type: 'close_clue' })));
+    } else if (!S.current.buzzingOpen && !S.current.locked && !S.current.attemptResult) {
+      statusEl.textContent = 'Read the clue, then open the buzzers.';
+      statusEl.classList.add('waiting');
+      actions.appendChild(mkBtn('Start Buzzing', 'gold', () => send({ type: 'start_buzzing' })));
+      actions.appendChild(mkBtn('Cancel', 'outline', () => send({ type: 'close_clue' })));
+    } else if (S.current.buzzingOpen && !S.current.locked) {
+      statusEl.textContent = 'Buzzers open — waiting for someone to attempt…';
+      statusEl.classList.add('waiting');
+      actions.appendChild(mkBtn('No One Buzzed / Skip', 'outline', () => send({ type: 'judge', result: 'skip' })));
+    } else if (S.current.locked) {
+      statusEl.innerHTML = '';
+      statusEl.appendChild(avatarImg(S.current.winner.avatar, 'small'));
+      statusEl.appendChild(document.createTextNode(' 🔔 ' + S.current.winner.playerName + ' is arranging their answer…'));
+      statusEl.classList.add('won');
+    } else if (S.current.attemptResult) {
+      statusEl.innerHTML = '';
+      statusEl.appendChild(avatarImg(null, 'small'));
+      statusEl.appendChild(document.createTextNode(
+        S.current.attemptResult.playerName + ' got ' + S.current.attemptResult.correctCount + ' of ' + S.current.attemptResult.total + ' correct.'
+      ));
+      statusEl.classList.add('wrongflag');
+      actions.appendChild(mkBtn('Reopen Buzzing', 'gold', () => send({ type: 'reopen_buzzing' })));
+      actions.appendChild(mkBtn('Give Up / Skip', 'outline', () => send({ type: 'judge', result: 'skip' })));
+    }
+    return;
+  }
+
+  if (S.current.isDailyDouble) {
+    if (!S.current.answerShown) {
+      statusEl.textContent = '';
+      actions.appendChild(mkBtn('Show Answer', 'gold', () => send({ type: 'reveal_answer' })));
+    } else {
+      statusEl.textContent = '';
+      actions.appendChild(mkBtn('Correct', 'success', () => send({ type: 'judge', result: 'correct' })));
+      actions.appendChild(mkBtn('Wrong', 'danger', () => send({ type: 'judge', result: 'wrong' })));
+    }
+    return;
+  }
 
   if (!S.current.buzzingOpen && !S.current.locked && !S.current.answerShown) {
     statusEl.textContent = 'Read the clue, then open the buzzers.';
@@ -492,8 +649,14 @@ function mkBtn(label, cls, onclick) {
   return b;
 }
 
+document.getElementById('revealDdBtn').onclick = () => {
+  const playerId = document.getElementById('wagerPlayerSelect').value;
+  const wager = Number(document.getElementById('wagerAmountInput').value) || 0;
+  send({ type: 'set_dd_wager', playerId, wager });
+};
+
 // ---------- Edit Clue modal ----------
-function openEditClue(catIndex, clueIndex) {
+function openEditClue(catIndex, clueIndex, forcePuzzleFields) {
   editingClue = { catIndex, clueIndex };
   pendingMedia = undefined;
   const clue = S.board.categories[catIndex].clues[clueIndex];
@@ -501,6 +664,11 @@ function openEditClue(catIndex, clueIndex) {
   document.getElementById('editClueText').value = clue.clue;
   document.getElementById('editAnswerText').value = clue.answer;
   renderMediaPreview(clue.media);
+  const hasPuzzle = !!(clue.puzzle && clue.puzzle.names && clue.puzzle.names.length);
+  const showPuzzle = forcePuzzleFields || clue.dd;
+  document.getElementById('puzzleFieldWrap').style.display = showPuzzle ? 'block' : 'none';
+  document.getElementById('puzzleHintWrap').style.display = showPuzzle ? 'none' : 'block';
+  document.getElementById('puzzleNamesText').value = hasPuzzle ? clue.puzzle.names.join('\n') : '';
   document.getElementById('editOverlay').classList.add('active');
 }
 function renderMediaPreview(media) {
@@ -524,7 +692,7 @@ document.getElementById('mediaInput').onchange = (e) => {
   if (!isVideo && !isImage) { alert('Please choose an image, GIF, or video file.'); e.target.value = ''; return; }
   const maxBytes = 40 * 1024 * 1024;
   if (file.size > maxBytes) {
-    alert('That file is ' + (file.size / (1024 * 1024)).toFixed(1) + 'MB — please use something under 40MB.');
+    alert('That file is ' + (file.size / (1024 * 1024)).toFixed(1) + 'MB — please use something under 40MB. That\'s roughly enough for a compressed 5-minute clip; try a lower resolution/bitrate, or converting GIF to MP4 (which compresses far better than GIF).');
     e.target.value = '';
     return;
   }
@@ -561,12 +729,20 @@ document.getElementById('mediaInput').onchange = (e) => {
 };
 document.getElementById('removeMediaBtn').onclick = () => { pendingMedia = null; renderMediaPreview(null); };
 document.getElementById('saveClueBtn').onclick = () => {
+  const showingPuzzleFields = document.getElementById('puzzleFieldWrap').style.display === 'block';
+  let puzzlePayload = null;
+  if (showingPuzzleFields) {
+    const names = document.getElementById('puzzleNamesText').value.split('\n').map(s => s.trim()).filter(Boolean);
+    if (names.length >= 2) puzzlePayload = { names };
+    // fewer than 2 names left blank/incomplete: this Daily Double just plays as a normal wager instead
+  }
   send({
     type: 'edit_clue', catIndex: editingClue.catIndex, clueIndex: editingClue.clueIndex,
     value: document.getElementById('editValue').value,
     clue: document.getElementById('editClueText').value,
     answer: document.getElementById('editAnswerText').value,
-    media: pendingMedia
+    media: pendingMedia,
+    puzzle: puzzlePayload
   });
   closeEditModal();
 };
@@ -587,6 +763,11 @@ document.getElementById('editToggleBtn').onclick = (e) => {
   e.target.classList.toggle('on', editMode);
   document.getElementById('editBanner').classList.toggle('active', editMode);
   document.getElementById('editOnlyButtons').style.display = editMode ? 'flex' : 'none';
+  if (!editMode) {
+    send({ type: 'set_dd_marking', on: false });
+    document.getElementById('ddSetupOverlay').classList.remove('active');
+    document.getElementById('markingBanner').classList.remove('active');
+  }
   renderBoard();
 };
 document.getElementById('addCategoryBtn').onclick = () => { send({ type: 'add_category' }); if (!editMode) document.getElementById('editToggleBtn').click(); };
@@ -666,6 +847,48 @@ document.getElementById('fileInput').onchange = (e) => {
   reader.readAsText(file);
   e.target.value = '';
 };
+
+// ---------- Daily Double setup ----------
+document.getElementById('ddSetupBtn').onclick = () => {
+  document.getElementById('ddCountInput').value = S.dailyDoubleCount;
+  document.getElementById('toggleMarkingBtn').textContent = S.markingDailyDoubles ? 'Turn Off' : 'Turn On';
+  document.getElementById('ddSetupOverlay').classList.add('active');
+};
+document.getElementById('closeDdSetupBtn').onclick = () => {
+  send({ type: 'set_dd_marking', on: false });
+  document.getElementById('toggleMarkingBtn').textContent = 'Turn On';
+  document.getElementById('ddSetupOverlay').classList.remove('active');
+};
+document.getElementById('toggleMarkingBtn').onclick = (e) => {
+  const turningOn = e.target.textContent === 'Turn On';
+  send({ type: 'set_dd_marking', on: turningOn });
+  e.target.textContent = turningOn ? 'Turn Off' : 'Turn On';
+  if (turningOn) {
+    document.getElementById('ddSetupOverlay').classList.remove('active');
+    document.getElementById('markingBanner').classList.add('active');
+  } else {
+    document.getElementById('markingBanner').classList.remove('active');
+  }
+};
+document.getElementById('markingBanner').onclick = () => {
+  send({ type: 'set_dd_marking', on: false });
+  document.getElementById('markingBanner').classList.remove('active');
+  document.getElementById('toggleMarkingBtn').textContent = 'Turn On';
+  document.getElementById('ddSetupOverlay').classList.add('active');
+};
+document.getElementById('ddCountInput').oninput = (e) => send({ type: 'set_dd_count', count: e.target.value });
+document.getElementById('shuffleDdBtn').onclick = () => {
+  const eligible = S.board.categories.reduce((sum, cat) => sum + cat.clues.filter(c => c.dd && !c.used).length, 0);
+  if (eligible === 0) { alert('Mark at least one question with ✓ before shuffling.'); return; }
+  send({ type: 'shuffle_dd' });
+};
+function updateDdStatsDisplay() {
+  if (!S) return;
+  const eligible = S.board.categories.reduce((sum, cat) => sum + cat.clues.filter(c => c.dd).length, 0);
+  document.getElementById('ddStats').textContent = eligible + ' question' + (eligible === 1 ? '' : 's') + ' marked · ' + S.activeDailyDoubles.length + ' placed';
+}
+const _origRender = render;
+render = function () { _origRender(); updateDdStatsDisplay(); };
 </script>
 </body>
 </html>
